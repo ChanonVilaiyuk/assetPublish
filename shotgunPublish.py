@@ -67,34 +67,77 @@ def publishTask(entity, taskEntity, status, path, outputPath) :
 		targetHeroTasks = []
 
 		filters = [['entity','is', entity]]
-		fields = ['content', 'id']
+		fields = ['content', 'id', 'project']
 		taskEntities = sg.find('Task', filters, fields)
+			
+		sgTaskDict = dict()
+		missingTask = []
+		projectEntity = dict()
+
+		for each in taskEntities : 
+			sgTaskDict[each['content']] = each
+			projectEntity = each['project']
 
 		if task in outputMap2.keys() : 
 			targetHeroTasks = outputMap2[task]
 
-		for each in taskEntities : 
-			taskName = each['content']
-			taskID = each['id']
+			for targetTask in targetTasks : 
+				if targetTask in sgTaskDict.keys() : 
+					# update 
+					data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
+					taskID = sgTaskDict[targetTask]['id']
+					result = sg.update('Task', taskID, data)
+					logger.debug('Update dependency %s -> %s' % (targetTask, path))
 
-			if taskName in targetTasks : 
-				data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
-				result = sg.update('Task', taskID, data)
-				targetTasks.remove(taskName)
-				logger.debug('Update dependency task %s %s' % (taskName, status))
+				else : 
+					missingTask.append(targetTask)
+					logger.debug('WARNING : Missing Task!! %s' % targetTask)
 
-			if taskName in targetHeroTasks : 
-				data = {'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}, 
-						'sg_status_list': heroStatus}
-				result = sg.update('Task', taskID, data)
-				targetHeroTasks.remove(taskName)
-				logger.debug('Update output task %s %s' % (taskName, heroStatus))
+			for targetHeroTask in targetHeroTasks : 
+				if targetHeroTask in sgTaskDict.keys() : 
+					# update 
+					data = {'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}}
+					taskID = sgTaskDict[targetTask]['id']
+					result = sg.update('Task', taskID, data)
+					logger.debug('Update dependency %s -> %s' % (targetHeroTask, path))
 
-		if not targetTasks and not targetHeroTasks : 
-			return True
+				else : 
+					# create 
+					step = {'code': 'Hero', 'type': 'Step', 'id': 70}
+					data = {'project': projectEntity, 'content': targetHeroTask, 'entity': entity, 'step': step, 
+							'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}}
+
+					result = sg.create('Task', data)
+					logger.debug('Create task dependency %s -> %s' % (targetHeroTask, path))
+
+		if not missingTask : 
+			return True 
 
 		else : 
-			logger.error('%s %s not found' % (targetTasks, targetHeroTasks), '')
+			logger.error('%s not found' % missingTask)
+
+		# for each in taskEntities : 
+		# 	taskName = each['content']
+		# 	taskID = each['id']
+
+		# 	if taskName in targetTasks : 
+		# 		data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
+		# 		result = sg.update('Task', taskID, data)
+		# 		targetTasks.remove(taskName)
+		# 		logger.debug('Update dependency task %s %s' % (taskName, status))
+
+		# 	if taskName in targetHeroTasks : 
+		# 		data = {'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}, 
+		# 				'sg_status_list': heroStatus}
+		# 		result = sg.update('Task', taskID, data)
+		# 		targetHeroTasks.remove(taskName)
+		# 		logger.debug('Update output task %s %s' % (taskName, heroStatus))
+
+		# if not targetTasks and not targetHeroTasks : 
+		# 	return True
+
+		# else : 
+		# 	logger.error('%s %s not found' % (targetTasks, targetHeroTasks), '')
 
 
 def getAssetID(project, assetType, assetSubType, assetName) : 
