@@ -65,6 +65,7 @@ class MyForm(QtGui.QMainWindow):
 		# QtGui.QWidget.__init__(self, parent)
 		self.ui = ui.Ui_AssetPublishWin()
 		self.ui.setupUi(self)
+		self.setWindowTitle('PT Asset Publish v.1.0 dev')
 
 		# icons 
 		self.logo = '%s/%s' % (os.path.dirname(moduleDir), 'icons/logo.png')
