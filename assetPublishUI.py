@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'O:\studioTools\maya\python\tool\publish\asset\assetPublishUI.ui'
 #
-# Created: Sat Jan 23 02:37:43 2016
+# Created: Sat Jan 23 18:07:02 2016
 #      by: PyQt4 UI code generator 4.9.5
 #
 # WARNING! All changes made in this file will be lost!
@@ -82,10 +82,22 @@ class Ui_AssetPublishWin(object):
         self.dependency_label = QtGui.QLabel(self.frame_7)
         self.dependency_label.setObjectName(_fromUtf8("dependency_label"))
         self.horizontalLayout_12.addWidget(self.dependency_label)
+        self.label_17 = QtGui.QLabel(self.frame_7)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.label_17.setFont(font)
+        self.label_17.setObjectName(_fromUtf8("label_17"))
+        self.horizontalLayout_12.addWidget(self.label_17)
+        self.output_label = QtGui.QLabel(self.frame_7)
+        self.output_label.setObjectName(_fromUtf8("output_label"))
+        self.horizontalLayout_12.addWidget(self.output_label)
         self.horizontalLayout_12.setStretch(0, 1)
         self.horizontalLayout_12.setStretch(1, 8)
         self.horizontalLayout_12.setStretch(2, 1)
-        self.horizontalLayout_12.setStretch(3, 8)
+        self.horizontalLayout_12.setStretch(3, 4)
+        self.horizontalLayout_12.setStretch(4, 1)
+        self.horizontalLayout_12.setStretch(5, 4)
         self.verticalLayout.addLayout(self.horizontalLayout_12)
         self.line_2 = QtGui.QFrame(self.frame_7)
         self.line_2.setFrameShape(QtGui.QFrame.HLine)
@@ -335,6 +347,8 @@ class Ui_AssetPublishWin(object):
         self.publish_label.setText(QtGui.QApplication.translate("AssetPublishWin", "-", None, QtGui.QApplication.UnicodeUTF8))
         self.label_11.setText(QtGui.QApplication.translate("AssetPublishWin", "Dependency : ", None, QtGui.QApplication.UnicodeUTF8))
         self.dependency_label.setText(QtGui.QApplication.translate("AssetPublishWin", "-", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_17.setText(QtGui.QApplication.translate("AssetPublishWin", "Output : ", None, QtGui.QApplication.UnicodeUTF8))
+        self.output_label.setText(QtGui.QApplication.translate("AssetPublishWin", "-", None, QtGui.QApplication.UnicodeUTF8))
         self.label_8.setText(QtGui.QApplication.translate("AssetPublishWin", "SubType : ", None, QtGui.QApplication.UnicodeUTF8))
         self.label_12.setText(QtGui.QApplication.translate("AssetPublishWin", "Step : ", None, QtGui.QApplication.UnicodeUTF8))
         self.subType_label.setText(QtGui.QApplication.translate("AssetPublishWin", "-", None, QtGui.QApplication.UnicodeUTF8))

@@ -160,13 +160,24 @@ class MyForm(QtGui.QMainWindow):
 			text = '/'.join(dependency)
 			self.ui.dependency_label.setText(str(text))
 
+		output = self.getOutputFile()
+
+		if output : 
+			text = '/'.join(output)
+			self.ui.output_label.setText(str(text))
+
 	
 	def getDependency(self) : 
 		if self.asset.task() in setting.statusMap2.keys() : 
 			dependency = setting.statusMap2[self.asset.task()]
 			return dependency 
-			
 
+
+	def getOutputFile(self) : 
+		if self.asset.task() in setting.outputMap2.keys() : 
+			output = setting.outputMap2[self.asset.task()]
+			return output
+			
 
 	''' button commands '''
 	def doSnapScreen(self) : 
@@ -282,10 +293,11 @@ class MyForm(QtGui.QMainWindow):
 
 			# check dependency
 			dependency = self.getDependency()
+			outputFile = self.getOutputFile()
 
 			dStatus = True 
 			dMessage = ''
-			if not dependency : 
+			if not dependency and not outputFile : 
 				dStatus = False 
 				dMessage = 'No task found "%s"' % self.asset.task()
 
@@ -356,7 +368,8 @@ class MyForm(QtGui.QMainWindow):
 
 			''' set task and dependency tasks ''' 
 			logger.debug('Set task')
-			taskResult = shotgunPublish.publishTask(assetEntity, taskEntity, sg_status_list, self.asset.publishFile())
+			outputFile = self.getOutputFile()
+			taskResult = shotgunPublish.publishTask(assetEntity, taskEntity, sg_status_list, self.asset.publishFile(), outputFile)
 			self.setStatus('Set Task', taskResult)
 			
 			''' set geo info ID ''' 
@@ -385,13 +398,18 @@ class MyForm(QtGui.QMainWindow):
 			logger.info('Save file done %s' % saveResult)
 			self.setStatus('Save', saveResult)
 
+			# get increment version
+			thisFile = entityInfo.info()
+			incrementFile = thisFile.nextVersion()
+
 			# manage thumbnail / media
 			self.manageMediaFile()
 
 			# extra command 
+			batch = not self.ui.noBatch_checkBox.isChecked()
 			refPath = self.asset.getPath('ref')
 			logger.debug('Extra export -> %s' % refPath)
-			extraResults = extra.publish(self.asset)
+			extraResults = extra.publish(self.asset, batch)
 
 			if extraResults : 
 				for each in extraResults : 
@@ -409,12 +427,15 @@ class MyForm(QtGui.QMainWindow):
 
 			if saveResult : 
 				# set status 
-				thisFile = entityInfo.info()
-				incrementFile = thisFile.nextVersion()
 				logger.debug('Increment file -> %s' % incrementFile)
 
 				# increment file
-				incrementResult = hook.save(incrementFile)
+				if batch : 
+					incrementResult = hook.save(incrementFile)
+
+				else : 
+					incrementResult = fileUtils.copy(saveResult, incrementFile)
+
 				if incrementResult : 
 					self.setStatus('Increment File', incrementResult)
 					logger.info('Increment file to %s' % incrementFile)

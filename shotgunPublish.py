@@ -29,6 +29,7 @@ sg = Shotgun(server, script, id)
 
 statusMap = setting.statusMap
 statusMap2 = setting.statusMap2
+outputMap2 = setting.outputMap2
 
 
 def publishVersion(project, assetType, assetSubType, assetName, taskName, publishFile, status, user) : 
@@ -47,10 +48,11 @@ def publishVersion(project, assetType, assetSubType, assetName, taskName, publis
 			return versionEntity, assetEntity, taskEntity
 
 
-def publishTask(entity, taskEntity, status, path) : 
+def publishTask(entity, taskEntity, status, path, outputPath) : 
 	taskID = taskEntity['id']
 	task = taskEntity['content']
 	path = path.replace('/', '\\')
+	heroStatus = 'aprv'
 
 	# update this task
 	data = { 'sg_status_list': status, 
@@ -62,10 +64,14 @@ def publishTask(entity, taskEntity, status, path) :
 	# update downstream
 	if task in statusMap2.keys() : 
 		targetTasks = statusMap2[task]
+		targetHeroTasks = []
 
 		filters = [['entity','is', entity]]
 		fields = ['content', 'id']
 		taskEntities = sg.find('Task', filters, fields)
+
+		if task in outputMap2.keys() : 
+			targetHeroTasks = outputMap2[task]
 
 		for each in taskEntities : 
 			taskName = each['content']
@@ -77,12 +83,18 @@ def publishTask(entity, taskEntity, status, path) :
 				targetTasks.remove(taskName)
 				logger.debug('Update dependency task %s %s' % (taskName, status))
 
-		if not targetTasks : 
+			if taskName in targetHeroTasks : 
+				data = {'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}, 
+						'sg_status_list': heroStatus}
+				result = sg.update('Task', taskID, data)
+				targetHeroTasks.remove(taskName)
+				logger.debug('Update output task %s %s' % (taskName, heroStatus))
+
+		if not targetTasks and not targetHeroTasks : 
 			return True
 
 		else : 
-			logger.error('%s not found' % targetTasks, '')
-
+			logger.error('%s %s not found' % (targetTasks, targetHeroTasks), '')
 
 
 def getAssetID(project, assetType, assetSubType, assetName) : 

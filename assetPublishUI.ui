@@ -72,7 +72,7 @@
             </layout>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,8,1,8">
+            <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="1,8,1,4,1,4">
              <item>
               <widget class="QLabel" name="label_13">
                <property name="font">
@@ -113,6 +113,26 @@
              </item>
              <item>
               <widget class="QLabel" name="dependency_label">
+               <property name="text">
+                <string>-</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_17">
+               <property name="font">
+                <font>
+                 <weight>75</weight>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Output : </string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="output_label">
                <property name="text">
                 <string>-</string>
                </property>

@@ -10,16 +10,21 @@ logger.setLogName(scriptName)
 
 
 geoGrp = 'Geo_Grp'
+namespace = 'Rig'
 
 def group() : 
 	# check Geo_Grp
 
 	if mc.objExists(geoGrp) : 
-		return True
+		return geoGrp
+
+	elif mc.objExists('%s:%s' % (namespace, geoGrp)) : 
+		return '%s:%s' % (namespace, geoGrp)
 
 
 def name() : 
-	if group() : 
+	geoGrp = group()
+	if geoGrp : 
 		mc.select(geoGrp, hi = True)
 		objs = mc.ls(sl = True, type = 'transform')
 		dups = []
