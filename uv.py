@@ -95,7 +95,7 @@ def convertTextureCmd(asset):
 			imageName = os.path.basename(filePath).split('.')[0]
 
 			# vray tile exr
-			output = os.path.join(assetPath,('\\').join([asset.task(),'exr']))
+			output = os.path.join(assetPath,('\\').join([asset.taskLOD(),'exr']))
 			if not os.path.exists(output.replace('\\','/')):
 				os.makedirs(output.replace('\\','/')) 
 
@@ -126,7 +126,7 @@ def convertTextureCmd(asset):
 			if not orgSize in stepScale.keys():
 				newSize = checkSize(int(orgSize))
 			for i in range(stepScale[newSize]):
-				output = os.path.join(assetPath,('\\').join([asset.task(),type['%s'% int(int(newSize)*scale)]]))
+				output = os.path.join(assetPath,('\\').join([asset.taskLOD(),type['%s'% int(int(newSize)*scale)]]))
 
 				newFile = "%s/%s_%s.%s" % (output,imageName,type['%s'% int(int(newSize)*scale)],imageTyp)
 				if not os.path.exists(output.replace('\\','/')):

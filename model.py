@@ -2,14 +2,23 @@
 import maya.cmds as mc
 import maya.mel as mm
 import os, sys
+from tool.publish.asset import setting 
+reload(setting)
+from tool.rig.cmd import rig_cmd as rigCmd 
+reload(rigCmd)
+
 
 def publish(asset) : 
-	result = dict()
-	result1 = exportGPU(asset)
-	result2 = createAD(asset)
 
-	result.update(result1)
-	result.update(result2)
+	result = dict()
+	if asset.type() in setting.checkExportSetting['hero-gpu'] : 
+		result1 = exportGPU(asset)
+		result.update(result1)
+
+	if asset.type() in setting.checkExportSetting['hero-ad'] : 
+		result2 = createAD(asset)
+		result.update(result2)
+
 	return result
 
 def exportGPU(asset) : 
@@ -19,7 +28,7 @@ def exportGPU(asset) :
 
 	exportGrp = 'Geo_Grp'
 	refPath = asset.getPath('ref')
-	abcName = asset.getRefNaming('gpu')
+	abcName = asset.getRefNaming('gpu', showExt = False)
 
 	result = asm_utils.exportGPUCacheGrp(exportGrp, refPath, abcName, time = 'still')
 	if result : 
@@ -38,6 +47,7 @@ def createAD(asset) :
 
 	status = False
 	key = 'Create AD'
+	message = ''
 
 	# create only file not exists 
 	if not os.path.exists(adFilePath) : 

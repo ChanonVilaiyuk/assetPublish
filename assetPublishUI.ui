@@ -364,6 +364,9 @@
                    <height>0</height>
                   </size>
                  </property>
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
                  <property name="selectionMode">
                   <enum>QAbstractItemView::ExtendedSelection</enum>
                  </property>
@@ -389,7 +392,11 @@
                 </widget>
                </item>
                <item>
-                <widget class="QListWidget" name="ref_listWidget"/>
+                <widget class="QListWidget" name="ref_listWidget">
+                 <property name="contextMenuPolicy">
+                  <enum>Qt::CustomContextMenu</enum>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
@@ -524,11 +531,35 @@
           <item>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
-             <widget class="QCheckBox" name="noBatch_checkBox">
-              <property name="text">
-               <string>Run Batch mode in current session</string>
-              </property>
-             </widget>
+             <layout class="QHBoxLayout" name="horizontalLayout_2">
+              <item>
+               <widget class="QCheckBox" name="noBatch_checkBox">
+                <property name="text">
+                 <string>Run Batch mode in current session</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="publishFile_checkBox">
+                <property name="text">
+                 <string>Publish File</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="publishShotgun_checkBox">
+                <property name="text">
+                 <string>Publish Shotgun</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
            </layout>
           </item>

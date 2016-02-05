@@ -23,3 +23,15 @@ def save(fileName) :
 
 def addUser(fileName, user) : 
 	return '%s_%s.%s' % (fileName.split('.')[0], user, fileName.split('.')[-1])
+
+def createReference(namespace, path) : 
+	result = mc.file(path, reference = True, ignoreVersion = True, gl = True, loadReferenceDepth = 'all', namespace = namespace, options = 'v=0')
+
+def importFile(file) : 
+	return mc.file(file,  i = True, type = 'mayaAscii', options = 'v=0', pr = True, loadReferenceDepth = 'all')
+
+def openFile(file) : 
+	return mc.file(file, o = True, f = True)
+
+def newFile() : 
+	mc.file(force=True , new=True )

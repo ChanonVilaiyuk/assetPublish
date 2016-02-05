@@ -23,10 +23,11 @@ reload(setting)
 
 moduleDir = sys.modules[__name__].__file__
 
-from tool.utils import pipelineTools, fileUtils, entityInfo, projectInfo
+from tool.utils import pipelineTools, fileUtils, entityInfo, projectInfo, mayaTools
 reload(pipelineTools)
 reload(fileUtils)
 reload(projectInfo)
+reload(mayaTools)
 
 from tool.utils import entityInfo2 as entityInfo
 reload(entityInfo)
@@ -108,6 +109,7 @@ class MyForm(QtGui.QMainWindow):
 	def initData(self) : 
 		# data 
 		self.asset = entityInfo.info()
+		self.svPublishFile = self.asset.publishFile()
 
 	def initFunctions(self) : 
 		# UI
@@ -118,6 +120,13 @@ class MyForm(QtGui.QMainWindow):
 		self.ui.screenShot_pushButton.clicked.connect(self.doSnapScreen)
 		self.ui.publish_pushButton.clicked.connect(self.doPublish)
 		self.ui.publish_listWidget.itemSelectionChanged.connect(self.doDisplayThumbnail)
+
+		self.ui.thumbnail_lineEdit.textChanged.connect(self.runRecheck)
+		# self.ui.media_lineEdit.textChanged.connect(self.runRecheck)
+
+		# right click 
+		self.ui.ref_listWidget.customContextMenuRequested.connect(self.showMenu)
+		self.ui.publish_listWidget.customContextMenuRequested.connect(self.showMenu2)
 
 
 	def fillUI(self) : 
@@ -138,6 +147,15 @@ class MyForm(QtGui.QMainWindow):
 
 		# pre check 
 		self.preCheck()
+
+
+	def runRecheck(self) : 
+		# set shotgun status
+		self.setStatusComboBox()
+
+		# pre check 
+		self.preCheck()
+
 
 
 	def setLogo(self) : 
@@ -161,7 +179,7 @@ class MyForm(QtGui.QMainWindow):
 			text = '/'.join(dependency)
 			self.ui.dependency_label.setText(str(text))
 
-		output = self.getOutputFile()
+		output = self.getOutputStep()
 
 		if output : 
 			text = '/'.join(output)
@@ -169,15 +187,29 @@ class MyForm(QtGui.QMainWindow):
 
 	
 	def getDependency(self) : 
-		if self.asset.task() in setting.statusMap2.keys() : 
-			dependency = setting.statusMap2[self.asset.task()]
+		kw = '%s-%s' % (self.asset.department(), self.asset.task())
+		if kw in setting.statusMap2.keys() : 
+			dependency = setting.statusMap2[kw]
 			return dependency 
 
 
-	def getOutputFile(self) : 
-		if self.asset.task() in setting.outputMap2.keys() : 
-			output = setting.outputMap2[self.asset.task()]
+	def getOutputStep(self) : 
+		kw = '%s-%s' % (self.asset.department(), self.asset.task())
+		if kw in setting.outputMap2.keys() : 
+			output = setting.outputMap2[kw]
+
+			export = []
+			# for each in output : 
+				# if each in setting.modelExportSetting.keys() : 
+				# 	exportType = setting.modelExportSetting[each]
+				# 	if self.asset.type() in exportType : 
+				# 		export.append(each)
+			# return export
 			return output
+
+
+	def getProjectSetting(self) : 
+		self.project
 			
 
 	''' button commands '''
@@ -208,18 +240,19 @@ class MyForm(QtGui.QMainWindow):
 		allowPublish, resultList = self.check()
 
 		if allowPublish : 
-			# screen shot 
-			self.screenShotDst
+
 			# publish files 
-			result1 = self.publishFile()
-			duration = datetime.now() - start 
-			self.setDuration(duration, 'sum')
+			if self.ui.publishFile_checkBox.isChecked() : 
+				result1 = self.publishFile()
+				duration = datetime.now() - start 
+				self.setDuration(duration, 'sum')
 
 			# publish shotgun 
-			start2 = datetime.now()
-			result2 = self.publishShotgun()
-			duration = datetime.now() - start2 
-			self.setDuration(duration, 'sum')
+			if self.ui.publishShotgun_checkBox.isChecked() : 
+				start2 = datetime.now()
+				result2 = self.publishShotgun()
+				duration = datetime.now() - start2 
+				self.setDuration(duration, 'sum')
 
 			# set total
 			duration = datetime.now() - start 
@@ -279,6 +312,9 @@ class MyForm(QtGui.QMainWindow):
 
 		# check screen shot 
 		dst = self.asset.publishImageFile()
+		
+		if str(self.ui.thumbnail_lineEdit.text()) : 
+			dst = str(self.ui.thumbnail_lineEdit.text())
 
 		if dst : 
 			if os.path.exists(dst) : 
@@ -294,7 +330,7 @@ class MyForm(QtGui.QMainWindow):
 
 			# check dependency
 			dependency = self.getDependency()
-			outputFile = self.getOutputFile()
+			outputFile = self.getOutputStep()
 
 			dStatus = True 
 			dMessage = ''
@@ -340,13 +376,14 @@ class MyForm(QtGui.QMainWindow):
 		assetType = self.asset.type()
 		assetSubType = self.asset.subType()
 		assetName = self.asset.name()
+		stepName = self.asset.department()
 		taskName = self.asset.task()
-		publishFile = os.path.basename(self.asset.publishFile()).split('.')[0]
+		publishFile = os.path.basename(self.svPublishFile).split('.')[0]
 		user = hook.getUser()
 
 		''' version ''' 
 		logger.debug('Create version %s' % publishFile)
-		versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, taskName, publishFile, sg_status_list, user)
+		versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user)
 		self.setStatus('Create version %s' % publishFile, versionEntity)
 		logger.info('Create version %s %s' % (publishFile, versionEntity))
 
@@ -369,8 +406,7 @@ class MyForm(QtGui.QMainWindow):
 
 			''' set task and dependency tasks ''' 
 			logger.debug('Set task')
-			outputFile = self.getOutputFile()
-			taskResult = shotgunPublish.publishTask(assetEntity, taskEntity, sg_status_list, self.asset.publishFile(), outputFile)
+			taskResult = shotgunPublish.publishTask(self.asset, assetEntity, stepName, taskEntity, sg_status_list, self.svPublishFile)
 			self.setStatus('Set Task', taskResult)
 			
 			''' set geo info ID ''' 
@@ -383,7 +419,7 @@ class MyForm(QtGui.QMainWindow):
 		logger.debug('--- publishing ---')
 
 		# publish file 
-		publishFile = self.asset.publishFile()
+		publishFile = self.svPublishFile
 		workFile = self.asset.publishFile(showUser = True)
 		workDir = self.asset.workDir()
 		user = hook.getUser()
@@ -549,6 +585,110 @@ class MyForm(QtGui.QMainWindow):
 
 
 	''' utils '''
+
+	def showMenu(self,pos):
+		if self.ui.ref_listWidget.currentItem() : 
+			menu=QtGui.QMenu(self)
+			# menu.addAction('Rename')
+			# menu.addAction('Delete')
+
+			subMenu = QtGui.QMenu('Open', self)
+			subMenu.addAction('Open')
+			subMenu.addAction('Open as work file')
+
+			subMenu2 = QtGui.QMenu('Import', self)
+			subMenu2.addAction('Import')
+			subMenu2.addAction('Import to new file')
+
+			subMenu3 = QtGui.QMenu('Reference', self)
+			subMenu3.addAction('Reference')
+			subMenu3.addAction('Reference to new file')
+			# items = self.getPlayblastFile()
+
+			# for each in items : 
+			# 	subMenu3.addAction(each)
+
+			menu.addMenu(subMenu)
+			menu.addMenu(subMenu2)
+			menu.addMenu(subMenu3)
+
+			menu.popup(self.ui.ref_listWidget.mapToGlobal(pos))
+			result = menu.exec_(self.ui.ref_listWidget.mapToGlobal(pos))
+
+			if result : 
+				self.menuCommand(result.text(), result.parentWidget().title())
+
+
+	def menuCommand(self, command, catagories) : 
+		selItem = str(self.ui.ref_listWidget.currentItem().text())
+		filePath = '%s/%s' % (self.asset.getPath('ref'), selItem)
+
+		if os.path.exists(filePath) : 
+
+			if catagories == 'Open' : 
+				if command == 'Open' : 
+					hook.openFile(filePath)
+
+				if command == 'Open as work file' : 
+					workFile = self.asset.nextVersion()
+					hook.openFile(filePath)
+					hook.save(workFile)
+
+			if catagories == 'Import' : 
+				if command == 'Import' : 
+					hook.importFile(filePath)
+
+				if command == 'Import to new file' : 
+					hook.newFile()
+					hook.importFile(filePath)
+
+			if catagories == 'Reference' : 
+				namespace = self.asset.name()
+
+				if command == 'Reference' : 
+					hook.createReference(namespace, filePath)
+
+				if command == 'Reference to new file' : 
+					hook.newFile()
+					hook.createReference(namespace, filePath)
+
+		else : 
+			self.messageBox('Error', 'File %s not exists' % filePath)
+
+
+	def showMenu2(self,pos):
+		if self.ui.publish_listWidget.currentItem() : 
+			item = str(self.ui.publish_listWidget.currentItem().text())
+			publishDir = self.asset.publishDir()
+			path = '%s/%s' % (publishDir, item)
+
+			menu=QtGui.QMenu(self)
+			menu.addAction('Open file')
+			menu.addAction('Open in Explorer')
+			menu.addAction('Copy Path')
+
+			menu.popup(self.ui.publish_listWidget.mapToGlobal(pos))
+			result = menu.exec_(self.ui.publish_listWidget.mapToGlobal(pos))
+
+			if result : 
+				self.menuCommand2(result.text(), path)
+
+
+	def menuCommand2(self, command, path) : 
+		if os.path.exists(path) : 
+			if command == 'Open file' : 
+				hook.openFile(path)
+
+			if command == 'Open in Explorer' : 
+				path = path.replace('/', '\\')
+				subprocess.Popen(r'explorer /select,"%s"' % path)
+
+			if command == 'Copy Path' : 
+				mayaTools.copyToClipboard(path)
+
+		else : 
+			self.messageBox('Error', '%s not found' % path)
+
 
 	def displayCapture(self, iconPath, display = 1) : 
 		w = self.h * display

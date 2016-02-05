@@ -32,15 +32,16 @@ statusMap2 = setting.statusMap2
 outputMap2 = setting.outputMap2
 
 
-def publishVersion(project, assetType, assetSubType, assetName, taskName, publishFile, status, user) : 
+def publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, status, user) : 
 	# create version 
+	logger.debug('publishVersion --------------------------------------------------')
 	assetEntity = getAssetID(project, assetType, assetSubType, assetName)
 	userEntity = getUser(user)
 
 	if assetEntity : 
 		assetID = assetEntity['id']
 		projectEntity = assetEntity['project']
-		taskEntity = getTaskID(assetEntity, taskName)
+		taskEntity = getTaskID(assetEntity, stepName, taskName)
 
 		if taskEntity : 
 			versionEntity = createVersion(projectEntity, assetEntity, taskEntity, publishFile, status, userEntity, description = '')
@@ -48,96 +49,107 @@ def publishVersion(project, assetType, assetSubType, assetName, taskName, publis
 			return versionEntity, assetEntity, taskEntity
 
 
-def publishTask(entity, taskEntity, status, path, outputPath) : 
+def publishTask(asset, entity, stepName, taskEntity, status, path) : 
+	logger.debug('publishTask --------------------------------------------------')
 	taskID = taskEntity['id']
 	task = taskEntity['content']
 	path = path.replace('/', '\\')
 	heroStatus = 'aprv'
+	stepEntity = getStepEntity(stepName)
 
-	# update this task
-	data = { 'sg_status_list': status, 
-			'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}
-			}
-	result = sg.update('Task', taskID, data) 
-	logger.debug('Update task %s - %s' % (task, status))
+	try : 
 
-	# update downstream
-	if task in statusMap2.keys() : 
-		targetTasks = statusMap2[task]
-		targetHeroTasks = []
+		# update this task
+		data = { 'sg_status_list': status, 
+				'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}
+				}
+		result = sg.update('Task', taskID, data) 
+		logger.debug('Update task %s - %s' % (task, status))
 
-		filters = [['entity','is', entity]]
-		fields = ['content', 'id', 'project']
-		taskEntities = sg.find('Task', filters, fields)
-			
-		sgTaskDict = dict()
-		missingTask = []
-		projectEntity = dict()
+		# update downstream
+		stepTask = '%s-%s' % (stepName, task)
 
-		for each in taskEntities : 
-			sgTaskDict[each['content']] = each
-			projectEntity = each['project']
+		if stepTask in statusMap2.keys() : 
+			targetTasks = statusMap2[stepTask]
 
-		if task in outputMap2.keys() : 
-			targetHeroTasks = outputMap2[task]
+			if stepTask in outputMap2.keys() : 
+				targetHeroTasks = outputMap2[stepTask]
 
-			for targetTask in targetTasks : 
-				if targetTask in sgTaskDict.keys() : 
-					# update 
-					data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
-					taskID = sgTaskDict[targetTask]['id']
-					result = sg.update('Task', taskID, data)
-					logger.debug('Update dependency %s -> %s' % (targetTask, path))
+				filters = [['entity','is', entity]]
+				fields = ['content', 'id', 'project', 'step']
+				taskEntities = sg.find('Task', filters, fields)
 
-				else : 
-					missingTask.append(targetTask)
-					logger.debug('WARNING : Missing Task!! %s' % targetTask)
+				if taskEntities : 
+					sgTaskDict = getTaskEntityInfo(taskEntities)
+					projectEntity = taskEntities[0]['project']
 
-			for targetHeroTask in targetHeroTasks : 
-				if targetHeroTask in sgTaskDict.keys() : 
-					# update 
-					data = {'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}}
-					taskID = sgTaskDict[targetTask]['id']
-					result = sg.update('Task', taskID, data)
-					logger.debug('Update dependency %s -> %s' % (targetHeroTask, path))
+					for targetTask in targetTasks : 
+						if targetTask in sgTaskDict.keys() : 
+							# update 
+							data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
+							taskID = sgTaskDict[targetTask]['id']
+							result = sg.update('Task', taskID, data)
+							logger.debug('Update dependency %s -> %s' % (targetTask, path))
 
-				else : 
-					# create 
-					step = {'code': 'Hero', 'type': 'Step', 'id': 70}
-					data = {'project': projectEntity, 'content': targetHeroTask, 'entity': entity, 'step': step, 
-							'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}}
+						else : 
+							taskName = targetTask.split('-')[-1]
+							step = setting.steps[targetTask.split('-')[0]]
+							data = {'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 
+									'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}, 'sg_status_list': 'aprv'}
 
-					result = sg.create('Task', data)
-					logger.debug('Create task dependency %s -> %s' % (targetHeroTask, path))
+							result = sg.create('Task', data)
+							logger.debug('Create task dependency %s -> %s' % (taskName, path))
 
-		if not missingTask : 
-			return True 
+					for targetHeroTask in targetHeroTasks : 
+						publish = True
+						# check if this asset type need to export output 
+						if targetHeroTask in setting.checkExportSetting.keys() : 
+							exportType = setting.checkExportSetting[targetHeroTask]
 
-		else : 
-			logger.error('%s not found' % missingTask)
+							if not asset.type() in exportType : 
+								publish = False
 
-		# for each in taskEntities : 
-		# 	taskName = each['content']
-		# 	taskID = each['id']
+						if publish : 
+							data = dict()
+							heroStatus = 'udt'
 
-		# 	if taskName in targetTasks : 
-		# 		data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
-		# 		result = sg.update('Task', taskID, data)
-		# 		targetTasks.remove(taskName)
-		# 		logger.debug('Update dependency task %s %s' % (taskName, status))
+							# check output file exists 
+							outputFile = getOutputFile(asset, targetHeroTask)
+							if outputFile : 	
+								if os.path.exists(outputFile) : 
+									heroStatus = 'aprv'
 
-		# 	if taskName in targetHeroTasks : 
-		# 		data = {'sg_hero_2' : {'local_path': path, 'name': os.path.basename(path)}, 
-		# 				'sg_status_list': heroStatus}
-		# 		result = sg.update('Task', taskID, data)
-		# 		targetHeroTasks.remove(taskName)
-		# 		logger.debug('Update output task %s %s' % (taskName, heroStatus))
+								data.update({'sg_hero_2' : {'local_path': outputFile, 'name': os.path.basename(outputFile)}})
+								logger.debug('Add output path %s' % outputFile)
 
-		# if not targetTasks and not targetHeroTasks : 
-		# 	return True
+							else : 
+								logger.debug('Output not found %s - %s' % (targetHeroTask, outputFile))
 
-		# else : 
-		# 	logger.error('%s %s not found' % (targetTasks, targetHeroTasks), '')
+							if targetHeroTask in sgTaskDict.keys() : 
+								# update 		
+								data.update({'sg_status_list': heroStatus})
+								taskID = sgTaskDict[targetHeroTask]['id']
+								result = sg.update('Task', taskID, data)
+								logger.debug('Update dependency %s -> %s' % (targetHeroTask, outputFile))
+
+							else : 
+								# create 
+								taskName = targetHeroTask.split('-')[-1]
+								step = setting.steps[targetHeroTask.split('-')[0]]
+								data.update({'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 'sg_status_list': 'aprv'})
+
+								result = sg.create('Task', data)
+								logger.debug('Create output task dependency %s -> %s' % (taskName, outputFile))
+
+
+
+		return True 
+
+	except Exception as e : 
+		logger.debug('Error update task!! %s' % e)
+		return False 
+
+
 
 
 def getAssetID(project, assetType, assetSubType, assetName) : 
@@ -150,15 +162,34 @@ def getAssetID(project, assetType, assetSubType, assetName) :
 	return asset
 
 
-def getTaskID(entity, taskName) : 
-	fields = ['id', 'code', 'content', 'sg_hero_2', 'sg_client', 'sg_status_list', 'step.Step.code']
-	filters = [
-				['entity','is', entity],
-				['content', 'is', taskName]
-				]
+def getTaskID(entity, stepName, taskName) : 
+	# check if step is in setting 
+	stepEntity = getStepEntity(stepName)
+	if stepEntity : 
 
-	task = sg.find_one('Task', filters, fields)
-	return task
+		fields = ['id', 'code', 'content', 'sg_hero_2', 'sg_client', 'sg_status_list', 'step.Step.code']
+		filters = [['step', 'is', stepEntity], 
+					['entity','is', entity],
+					['content', 'is', taskName]]
+
+		task = sg.find_one('Task', filters, fields)
+		return task
+
+
+def getOutputFile(asset, stepTask) : 
+	if stepTask in setting.outputFileMap.keys() : 
+		outputKey = setting.outputFileMap[stepTask]
+		refPath = asset.getPath('ref')
+		refFile = asset.getRefNaming(outputKey, showExt = True)
+
+		path = '%s/%s' % (refPath, refFile)
+
+		logger.debug('Output file %s' % path)
+		if os.path.exists(path) : 
+			return path.replace('/', '\\') 
+
+		# else : 
+		# 	logger.debug('Path not exists %s' % path)
 
 
 def getUser(localUser) : 
@@ -167,6 +198,25 @@ def getUser(localUser) :
 	userEntity = sg.find_one('HumanUser', filters, fields)
 
 	return userEntity
+
+
+def getStepEntity(stepName) : 
+	if stepName in setting.steps.keys() : 
+		stepEntity = setting.steps[stepName]
+		return stepEntity
+
+
+def getTaskEntityInfo(taskEntities) : 
+	sgTaskDict = dict()
+
+	for each in taskEntities : 
+		task = each['content']
+		stepID = each['step']['id']
+		step = setting.stepSgPipeMap[stepID]
+		key = '%s-%s' % (step, task)
+		sgTaskDict[key] = each
+		
+	return sgTaskDict
 
 
 def createVersion(projectEntity, entity, taskEntity, versionName, status, userEntity, description) : 

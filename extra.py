@@ -33,3 +33,9 @@ def depPublish(step, asset, batch = True) :
 		reload(rig)
 		return rig.publish(asset, batch)
 
+	if step == 'surface' : 
+		from tool.publish.asset import shade
+		reload(shade)
+		return shade.publish(asset, batch)
+
+

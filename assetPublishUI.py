@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'O:\studioTools\maya\python\tool\publish\asset\assetPublishUI.ui'
 #
-# Created: Sat Jan 23 18:07:02 2016
+# Created: Fri Jan 29 12:11:10 2016
 #      by: PyQt4 UI code generator 4.9.5
 #
 # WARNING! All changes made in this file will be lost!
@@ -224,6 +224,7 @@ class Ui_AssetPublishWin(object):
         self.verticalLayout_12.addWidget(self.label_7)
         self.publish_listWidget = QtGui.QListWidget(self.frame_10)
         self.publish_listWidget.setMinimumSize(QtCore.QSize(200, 0))
+        self.publish_listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.publish_listWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.publish_listWidget.setObjectName(_fromUtf8("publish_listWidget"))
         self.verticalLayout_12.addWidget(self.publish_listWidget)
@@ -236,6 +237,7 @@ class Ui_AssetPublishWin(object):
         self.label_16.setObjectName(_fromUtf8("label_16"))
         self.verticalLayout_12.addWidget(self.label_16)
         self.ref_listWidget = QtGui.QListWidget(self.frame_10)
+        self.ref_listWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ref_listWidget.setObjectName(_fromUtf8("ref_listWidget"))
         self.verticalLayout_12.addWidget(self.ref_listWidget)
         self.verticalLayout_12.setStretch(0, 1)
@@ -315,9 +317,20 @@ class Ui_AssetPublishWin(object):
         self.verticalLayout_6.addWidget(self.line_3)
         self.verticalLayout_3 = QtGui.QVBoxLayout()
         self.verticalLayout_3.setObjectName(_fromUtf8("verticalLayout_3"))
+        self.horizontalLayout_2 = QtGui.QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(_fromUtf8("horizontalLayout_2"))
         self.noBatch_checkBox = QtGui.QCheckBox(self.centralwidget)
         self.noBatch_checkBox.setObjectName(_fromUtf8("noBatch_checkBox"))
-        self.verticalLayout_3.addWidget(self.noBatch_checkBox)
+        self.horizontalLayout_2.addWidget(self.noBatch_checkBox)
+        self.publishFile_checkBox = QtGui.QCheckBox(self.centralwidget)
+        self.publishFile_checkBox.setChecked(True)
+        self.publishFile_checkBox.setObjectName(_fromUtf8("publishFile_checkBox"))
+        self.horizontalLayout_2.addWidget(self.publishFile_checkBox)
+        self.publishShotgun_checkBox = QtGui.QCheckBox(self.centralwidget)
+        self.publishShotgun_checkBox.setChecked(True)
+        self.publishShotgun_checkBox.setObjectName(_fromUtf8("publishShotgun_checkBox"))
+        self.horizontalLayout_2.addWidget(self.publishShotgun_checkBox)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_2)
         self.verticalLayout_6.addLayout(self.verticalLayout_3)
         self.publish_pushButton = QtGui.QPushButton(self.centralwidget)
         self.publish_pushButton.setMinimumSize(QtCore.QSize(0, 40))
@@ -372,5 +385,7 @@ class Ui_AssetPublishWin(object):
         self.browse2_pushButton.setText(QtGui.QApplication.translate("AssetPublishWin", "..", None, QtGui.QApplication.UnicodeUTF8))
         self.label_15.setText(QtGui.QApplication.translate("AssetPublishWin", "Media : ", None, QtGui.QApplication.UnicodeUTF8))
         self.noBatch_checkBox.setText(QtGui.QApplication.translate("AssetPublishWin", "Run Batch mode in current session", None, QtGui.QApplication.UnicodeUTF8))
+        self.publishFile_checkBox.setText(QtGui.QApplication.translate("AssetPublishWin", "Publish File", None, QtGui.QApplication.UnicodeUTF8))
+        self.publishShotgun_checkBox.setText(QtGui.QApplication.translate("AssetPublishWin", "Publish Shotgun", None, QtGui.QApplication.UnicodeUTF8))
         self.publish_pushButton.setText(QtGui.QApplication.translate("AssetPublishWin", "Publish", None, QtGui.QApplication.UnicodeUTF8))
 
