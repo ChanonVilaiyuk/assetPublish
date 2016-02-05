@@ -15,17 +15,17 @@ outputMap = {
 
 
 statusMap2 = {
-			'model-model_md': ['uv-uv_md', 'rig-rig_md'], 'uv-uv_md': ['rig-rigUv_md'], 'rig-rig_md': [], 'rig-rigUv_md': ['surface-shade_md'], 'surface-shade_md': [], 
-			'model-model_hi': ['uv-uv_hi', 'rig-rig_hi'], 'uv-uv_hi': ['rig-rigUv_hi'], 'rig-rig_hi': [], 'rig-rigUv_hi': ['surface-shade_hi'], 'surface-shade_hi': [], 
-			'model-model_lo': ['uv-uv_lo', 'rig-rig_lo'], 'uv-uv_lo': ['rig-rigUv_lo'], 'rig-rig_lo': [], 'rig-rigUv_lo': ['surface-shade_lo'], 'surface-shade_lo': [], 
+			'model-model_md': ['uv-uv_md', 'rig-rig_md'], 'uv-uv_md': ['rig-rigUV_md'], 'rig-rig_md': [], 'rig-rigUV_md': ['surface-shade_md'], 'surface-shade_md': [], 
+			'model-model_hi': ['uv-uv_hi', 'rig-rig_hi'], 'uv-uv_hi': ['rig-rigUV_hi'], 'rig-rig_hi': [], 'rig-rigUV_hi': ['surface-shade_hi'], 'surface-shade_hi': [], 
+			'model-model_lo': ['uv-uv_lo', 'rig-rig_lo'], 'uv-uv_lo': ['rig-rigUV_lo'], 'rig-rig_lo': [], 'rig-rigUV_lo': ['surface-shade_lo'], 'surface-shade_lo': [], 
 			'model-model_master': ['uv-uv_master'], 'uv-uv_master': ['rig-rig_master'], 'rig-rig_master': [], 
 			}
 
 
 outputMap2 = {
-			'model-model_md': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_md': ['hero-anim_md'], 'rig-rigUv_md': ['hero-anim_md'], 'surface-shade_md': ['hero-render_md', 'hero-cache_md', 'hero-vrayProxy_md', 'hero-vPrxoy_md'], 
-			'model-model_hi': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_hi': ['hero-anim_hi'], 'rig-rigUv_hi': ['hero-anim_hi'], 'surface-shade_hi': ['hero-render_hi', 'hero-cache_hi', 'hero-vrayProxy_hi', 'hero-vPrxoy_hi'], 
-			'rig-rig_lo': ['hero-anim_lo'], 'rig-rigUv_lo': ['hero-anim_lo'], 'surface-shade_lo': ['hero-render_lo', 'hero-cahce_lo', 'vrayProxy_lo', 'hero-vPrxoy_lo']
+			'model-model_md': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_md': ['hero-anim_md'], 'rig-rigUV_md': ['hero-anim_md'], 'surface-shade_md': ['hero-render_md', 'hero-cache_md', 'hero-vrayProxy_md', 'hero-vPrxoy_md'], 
+			'model-model_hi': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_hi': ['hero-anim_hi'], 'rig-rigUV_hi': ['hero-anim_hi'], 'surface-shade_hi': ['hero-render_hi', 'hero-cache_hi', 'hero-vrayProxy_hi', 'hero-vPrxoy_hi'], 
+			'rig-rig_lo': ['hero-anim_lo'], 'rig-rigUV_lo': ['hero-anim_lo'], 'surface-shade_lo': ['hero-render_lo', 'hero-cahce_lo', 'vrayProxy_lo', 'hero-vPrxoy_lo']
 			}
 
 outputFileMap = {'hero-gpu': 'gpu', 'hero-ad': 'ad', 'hero-anim_md': 'anim', 'hero-render_md': 'render', 'hero-cache_md': 'cache', 'hero-vrayProxy_md': 'vrayProxy', 'hero-vPrxoy_md': 'vProxy', 'hero-geo': 'geo',
@@ -79,7 +79,7 @@ stepSgPipeMap = {
 					70: 'hero'
 				}
 
-checkExportSetting = {'hero-ad': ['prop', 'setDress', 'vehicle'], 'hero-gpu': ['prop', 'setDress', 'vehicle']}
+checkExportSetting = {'hero-ad': ['prop', 'setDress', 'vehicle'], 'hero-gpu': ['prop', 'setDress', 'vehicle'], 'hero-geo': ['prop', 'setDress', 'vehicle']}
 
 exportGrp = 'Geo_Grp'
 rigGrp = 'Rig_Grp'
@@ -87,4 +87,5 @@ superRootCtrl = 'SuperRoot_Ctrl'
 vrayProxyGrp = 'vproxy_grp'
 
 rigCmd = {'importRef': 'rigCmd.importRef()', 'clean': 'rigCmd.clean()', 'tmpShd': 'rigCmd.assignTmpShd()', 'removeSet': 'rigCmd.removeSets()', 'removeRig': 'rigCmd.removeRig()',
-			'keepVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = True)', 'removeVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = False)', 'vProxy': 'rigCmd.vProxy()', 'removeVrayNode': 'rigCmd.removeVrayNode()'}
+			'keepVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = True)', 'removeVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = False)', 'vProxy': 'rigCmd.vProxy()', 'removeVrayNode': 'rigCmd.removeVrayNode()', 
+			'combineGeo': 'rigCmd.combineGeo()', 'cleanAllSet': 'rigCmd.cleanAllSets()'}

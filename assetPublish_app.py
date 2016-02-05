@@ -109,6 +109,8 @@ class MyForm(QtGui.QMainWindow):
 	def initData(self) : 
 		# data 
 		self.asset = entityInfo.info()
+		self.statusMap = self.getProjectSetting('statusMap')
+		self.outputMap = self.getProjectSetting('outputMap')
 		self.svPublishFile = self.asset.publishFile()
 
 	def initFunctions(self) : 
@@ -188,15 +190,15 @@ class MyForm(QtGui.QMainWindow):
 	
 	def getDependency(self) : 
 		kw = '%s-%s' % (self.asset.department(), self.asset.task())
-		if kw in setting.statusMap2.keys() : 
-			dependency = setting.statusMap2[kw]
+		if kw in self.statusMap.keys() : 
+			dependency = self.statusMap[kw]
 			return dependency 
 
 
 	def getOutputStep(self) : 
 		kw = '%s-%s' % (self.asset.department(), self.asset.task())
-		if kw in setting.outputMap2.keys() : 
-			output = setting.outputMap2[kw]
+		if kw in self.outputMap.keys() : 
+			output = self.outputMap[kw]
 
 			export = []
 			# for each in output : 
@@ -208,8 +210,23 @@ class MyForm(QtGui.QMainWindow):
 			return output
 
 
-	def getProjectSetting(self) : 
-		self.project
+	def getProjectSetting(self, settingType) : 
+		project = self.asset.project()
+
+		if project in setting.projectSetting.keys() : 
+			settingValue = setting.projectSetting[project]
+
+		else : 
+			settingValue = setting.projectSetting['all']
+
+		value = setting.settingMap[settingValue]
+
+		if value : 
+			if settingType == 'statusMap' : 
+				return value['statusMap']
+
+			if settingType == 'outputMap' : 
+				return value['outputMap']
 			
 
 	''' button commands '''
@@ -226,6 +243,10 @@ class MyForm(QtGui.QMainWindow):
 			self.displayCapture(result, 0.5)
 			self.checkList['screenShot'] = True
 			self.screenShotDst = result
+
+			# assign to lineEdit
+			self.ui.thumbnail_lineEdit.setText(result)
+			self.ui.media_lineEdit.setText(result)
 
 
 		self.preCheck()
@@ -324,10 +345,6 @@ class MyForm(QtGui.QMainWindow):
 				# display 
 				self.displayCapture(dst, 0.5)
 
-				# assign to lineEdit
-				self.ui.thumbnail_lineEdit.setText(dst)
-				self.ui.media_lineEdit.setText(dst)
-
 			# check dependency
 			dependency = self.getDependency()
 			outputFile = self.getOutputStep()
@@ -383,6 +400,7 @@ class MyForm(QtGui.QMainWindow):
 
 		''' version ''' 
 		logger.debug('Create version %s' % publishFile)
+		logger.debug('%s %s %s %s %s %s %s %s %s' % (project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user))
 		versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user)
 		self.setStatus('Create version %s' % publishFile, versionEntity)
 		logger.info('Create version %s %s' % (publishFile, versionEntity))
