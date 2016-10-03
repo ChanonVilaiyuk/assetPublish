@@ -15,7 +15,7 @@ reload(pt)
 def publish(asset) : 
 
 	result = dict()
-	print asset.type()
+
 	if asset.type() in setting.checkExportSetting['hero-gpu'] : 
 		print 'hero-gpu'
 		result1 = exportGPU(asset)

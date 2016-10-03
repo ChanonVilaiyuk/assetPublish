@@ -16,13 +16,15 @@ version = mc.about(v = True)
 def publish(asset, batch) : 
 	result = dict()
 	result1 = exportRig(asset, batch)
-	result2 = exportHData(asset)
+	# result2 = exportHData(asset)
 	result3 = exportABC(asset)
 	result4 = exportDevRig(asset)
 
 	result.update(result1)
-	result.update(result2)
-	result.update(result3)
+	# result.update(result2)
+	if result3 : 
+		result.update(result3)
+		
 	result.update(result4)
 
 	return result
@@ -41,7 +43,7 @@ def exportRig(asset, batch) :
 		backupResult = pt.backupRef(dst)
 
 		# publish
-		cmds = "['importRef', 'clean', 'removeSet']"
+		cmds = "['importRef', 'clean', 'removeSet', 'removeFixSet']"
 		rigPublish.run(src, dst, cmds)
 
 		if backupResult : 
@@ -156,9 +158,19 @@ def exportABC(asset) :
 
 def exportDevRig(asset) : 
 	# dev rig
+	# md = default 
+	lod = asset.taskLOD()
 	devFile = asset.getRefNaming('devRig')
 	devPath = asset.getPath('dev')
 	devRigPath = '%s/%s' % (devPath, devFile)
+
+	if lod == 'lo' : 
+		devRigPath = '%s/%s' % (devPath, devFile.replace('.ma', 'Lo.ma'))
+
+	if lod == 'hi' : 
+		devRigPath = '%s/%s' % (devPath, devFile.replace('.ma', 'Hi.ma'))
+
+	print 'export Dev Rig %s' % devRigPath
 
 	# ref/Anim
 	refPath = asset.getPath('ref')
@@ -178,7 +190,13 @@ def exportDevRig(asset) :
 	if dstExists : 
 		mtime = os.path.getmtime(dst)
 
-	cmds = "['importRef', 'clean', 'removeSet', 'tmpShd']"
+	cmds = "['importRef', 'clean', 'removeSet']"
+
+	# override rig set 
+	if asset.project() in setting.devCmdSetOverride.keys() : 
+		cmds = setting.devCmdSetOverride[asset.project()]
+		print cmds 
+
 	rigPublish.run(src, dst, cmds)
 
 	status = False 

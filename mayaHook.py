@@ -15,8 +15,10 @@ def getUser() :
 	return mc.optionVar(q = 'PTuser')
 
 
-def save(fileName) : 
-	mc.file(rename = fileName)
+def save(fileName, rename = True) : 
+	if rename : 
+		mc.file(rename = fileName)
+		
 	result = mc.file(save = True, type = 'mayaAscii')
 
 	return result

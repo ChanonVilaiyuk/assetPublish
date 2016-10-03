@@ -8,9 +8,9 @@ statusMap = {
 			}
 
 outputMap = {
-			'model-model_md': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_md': ['hero-anim_md'], 'surface-shade_md': ['hero-render_md', 'hero-cache_md', 'hero-vrayProxy_md', 'hero-vPrxoy_md'], 
-			'model-model_hi': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_hi': ['hero-anim_hi'], 'surface-shade_hi': ['hero-render_hi', 'hero-cache_hi', 'hero-vrayProxy_hi', 'hero-vPrxoy_hi'], 
-			'rig-rig_lo': ['hero-anim_lo'], 'surface-shade_lo': ['hero-render_lo', 'hero-cahce_lo', 'vrayProxy_lo', 'hero-vPrxoy_lo']
+			'model-model_md': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_md': ['hero-anim_md'], 'surface-shade_md': ['hero-render_md', 'hero-cache_md', 'hero-vrayProxy_md', 'hero-vProxy_md'], 
+			'model-model_hi': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_hi': ['hero-anim_hi'], 'surface-shade_hi': ['hero-render_hi', 'hero-cache_hi', 'hero-vrayProxy_hi', 'hero-vProxy_hi'], 
+			'rig-rig_lo': ['hero-anim_lo'], 'surface-shade_lo': ['hero-render_lo', 'hero-cahce_lo', 'vrayProxy_lo', 'hero-vProxy_lo']
 			}
 
 
@@ -23,22 +23,32 @@ statusMap2 = {
 
 
 outputMap2 = {
-			'model-model_md': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_md': ['hero-anim_md'], 'rig-rigUV_md': ['hero-anim_md'], 'surface-shade_md': ['hero-render_md', 'hero-cache_md', 'hero-vrayProxy_md', 'hero-vPrxoy_md'], 
-			'model-model_hi': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_hi': ['hero-anim_hi'], 'rig-rigUV_hi': ['hero-anim_hi'], 'surface-shade_hi': ['hero-render_hi', 'hero-cache_hi', 'hero-vrayProxy_hi', 'hero-vPrxoy_hi'], 
-			'rig-rig_lo': ['hero-anim_lo'], 'rig-rigUV_lo': ['hero-anim_lo'], 'surface-shade_lo': ['hero-render_lo', 'hero-cahce_lo', 'vrayProxy_lo', 'hero-vPrxoy_lo']
+			'model-model_md': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_md': ['hero-anim_md'], 'rig-rigUV_md': ['hero-anim_md'], 'surface-shade_md': ['hero-render_md', 'hero-cache_md', 'hero-vrayProxy_md', 'hero-vProxy_md'], 
+			'model-model_hi': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_hi': ['hero-anim_hi'], 'rig-rigUV_hi': ['hero-anim_hi'], 'surface-shade_hi': ['hero-render_hi', 'hero-cache_hi', 'hero-vrayProxy_hi', 'hero-vProxy_hi'], 
+			'model-model_lo': ['hero-gpu', 'hero-ad', 'hero-geo'], 'rig-rig_lo': ['hero-anim_lo'], 'rig-rigUV_lo': ['hero-anim_lo'], 'surface-shade_lo': ['hero-render_lo', 'hero-cache_lo', 'hero-vrayProxy_lo', 'hero-vProxy_lo']
 			}
 
-outputFileMap = {'hero-gpu': 'gpu', 'hero-ad': 'ad', 'hero-anim_md': 'anim', 'hero-render_md': 'render', 'hero-cache_md': 'cache', 'hero-vrayProxy_md': 'vrayProxy', 'hero-vPrxoy_md': 'vProxy', 'hero-geo': 'geo',
-				'hero-anim_hi': 'anim', 'hero-render_hi': 'render', 'hero-cache_hi': 'cache', 'hero-vrayProxy_hi': 'vrayProxy', 'hero-vPrxoy_hi': 'vProxy', 
-				'hero-anim_lo': 'anim', 'hero-render_lo': 'render', 'hero-cache_lo': 'cache', 'hero-vrayProxy_lo': 'vrayProxy', 'hero-vPrxoy_lo': 'vProxy'}
+outputFileMap = {'hero-gpu': 'gpu', 'hero-ad': 'ad', 'hero-anim_md': 'anim', 'hero-render_md': 'render', 'hero-cache_md': 'cache', 'hero-vrayProxy_md': 'vrayProxy', 'hero-vProxy_md': 'vProxy', 'hero-geo': 'geo',
+				'hero-anim_hi': 'anim', 'hero-render_hi': 'render', 'hero-cache_hi': 'cache', 'hero-vrayProxy_hi': 'vrayProxy', 'hero-vProxy_hi': 'vProxy', 
+				'hero-anim_lo': 'anim', 'hero-render_lo': 'render', 'hero-cache_lo': 'cache', 'hero-vrayProxy_lo': 'vrayProxy', 'hero-vProxy_lo': 'vProxy'}
 
 
 settingMap = {	1: {'statusMap': statusMap, 'outputMap': outputMap}, 
 				2: {'statusMap': statusMap2, 'outputMap': outputMap2}
 			}
 
-projectSetting = {'all': 1, 
-					'Lego_Frozen': 2}
+projectSetting = {'all': 2, 
+					'Lego_Frozen': 2, 
+					'Lego_FRDCG': 2, 
+					'Lego_Pipeline': 2, 
+					'Lego_FRD360': 2, 
+					'Maya2016Test': 2, 
+					'TVC_LEGO': 2, 
+					'Lego_CTYCG': 2}
+
+textureCheckStep = ['uv']
+shotgunStatusOverride = ['surface']
+overrideStatus = 'ip'
 
 
 steps = {
@@ -79,8 +89,8 @@ stepSgPipeMap = {
 					70: 'hero'
 				}
 
-checkExportSetting = {'hero-ad': ['prop', 'setDress', 'vehicle'], 'hero-gpu': ['prop', 'setDress', 'vehicle'], 'hero-geo': ['prop', 'setDress', 'vehicle']}
-
+checkExportSetting = {'hero-ad': ['prop', 'setDress', 'vehicle', 'temp'], 'hero-gpu': ['prop', 'setDress', 'vehicle'], 'hero-geo': ['prop', 'setDress', 'vehicle']}
+addInfoDep = ['rig']
 exportGrp = 'Geo_Grp'
 rigGrp = 'Rig_Grp'
 superRootCtrl = 'SuperRoot_Ctrl'
@@ -88,4 +98,16 @@ vrayProxyGrp = 'vproxy_grp'
 
 rigCmd = {'importRef': 'rigCmd.importRef()', 'clean': 'rigCmd.clean()', 'tmpShd': 'rigCmd.assignTmpShd()', 'removeSet': 'rigCmd.removeSets()', 'removeRig': 'rigCmd.removeRig()',
 			'keepVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = True)', 'removeVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = False)', 'vProxy': 'rigCmd.vProxy()', 'removeVrayNode': 'rigCmd.removeVrayNode()', 
-			'combineGeo': 'rigCmd.combineGeo()', 'cleanAllSet': 'rigCmd.cleanAllSets()'}
+			'combineGeo': 'rigCmd.combineGeo()', 'cleanAllSet': 'rigCmd.cleanAllSets()', 'exportShade': 'rigCmd.exportAssetShade()', 
+			'removeFixSet': 'rigCmd.removeFixSets()'}
+
+heroIconDept = ['model', 'uv', 'surface']
+
+devCmdSetOverride = {'Lego_FRDCG': "['importRef', 'clean', 'removeSet', 'tmpShd']", 
+					'Lego_Pipeline': "['importRef', 'clean', 'removeSet', 'tmpShd']",
+					'Lego_CTYCG': "['importRef', 'clean', 'removeSet', 'tmpShd']",
+					'Maya2016Test': "['importRef', 'clean', 'removeSet', 'tmpShd']", 
+					'Lego_Frozen': "['importRef', 'clean', 'removeSet', 'tmpShd']", 
+					'Lego_FRD360': "['importRef', 'clean', 'removeSet', 'tmpShd']"}
+
+uvShadeOverride = ['', '']

@@ -6,16 +6,16 @@ from tool.utils import mayaTools
 reload(mayaTools)
 
 
-def publish(asset, batch = True) : 
+def publish(asset, batch = True, mainUI=None) : 
 	step = asset.department()
-	result = depPublish(step, asset, batch)
+	result = depPublish(step, asset, batch, mainUI)
 	# testResult = {'test': {'status': True, 'meesage': ''}}
 	# result.update(testResult)
 
 	return result
 
 
-def depPublish(step, asset, batch = True) : 
+def depPublish(step, asset, batch = True, mainUI=None) : 
 	if step == 'model' : 
 		# GPU
 		# find Geo_Grp
@@ -26,7 +26,7 @@ def depPublish(step, asset, batch = True) :
 	if step == 'uv' : 
 		from tool.publish.asset import uv 
 		reload(uv)
-		return uv.publish(asset)
+		return uv.publish(asset, mainUI)
 
 	if step == 'rig' : 
 		from tool.publish.asset import rig

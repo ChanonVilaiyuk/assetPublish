@@ -2,6 +2,8 @@
 
 from tool.utils import customLog
 import maya.cmds as mc
+import pymel.core as pm
+import setting
 
 scriptName = 'tool.publish.asset.pipeline'
 logger = customLog.customLog()
@@ -9,6 +11,7 @@ logger.setLevel(customLog.DEBUG)
 logger.setLogName(scriptName)
 
 
+rigGrp = 'Rig_Grp'
 geoGrp = 'Geo_Grp'
 namespace = 'Rig'
 
@@ -21,25 +24,30 @@ def group() :
 	elif mc.objExists('%s:%s' % (namespace, geoGrp)) : 
 		return '%s:%s' % (namespace, geoGrp)
 
-
+		
 def name() : 
 	geoGrp = group()
 	if geoGrp : 
-		mc.select(geoGrp, hi = True)
-		objs = mc.ls(sl = True, type = 'transform')
-		dups = []
+		try : 
+			mc.select(geoGrp, hi = True)
+			objs = mc.ls(sl = True, type = 'transform')
+			dups = []
 
-		for each in objs : 
-			if '|' in each : 
-				dups.append(each)
+			for each in objs : 
+				if '|' in each : 
+					dups.append(each)
 
-		mc.select(cl = True)
+			mc.select(cl = True)
 
-		if not dups : 
-			return True 
+			if not dups : 
+				return True 
 
-		else : 
-			return dups
+			else : 
+				return dups
+
+		except Exception as e : 
+			print e 
+			return False
 
 
 def cleanDefaultRenderLayer() : 
@@ -90,3 +98,61 @@ def cleanDisplayLayer() :
 				logger.debug('Remove layer %s' % each)
 
 	return [True, layers]
+
+
+def cleanNamespace() : 
+	from tool.utils import mayaTools 
+	reload(mayaTools)
+	mayaTools.cleanNamespace()
+
+
+
+def texturePath() : 
+	from tool.utils import entityInfo 
+	reload(entityInfo)
+
+	nodes = mc.ls(type = 'file')
+	paths = []
+
+	if nodes : 
+		for each in nodes : 
+			path = mc.getAttr('%s.fileTextureName' % each)
+			paths.append(path)
+
+	asset = entityInfo.info()
+	assetPath = asset.texturePath()
+	invalidPath = []
+
+	if asset.department() in setting.textureCheckStep : 
+		if paths : 
+			for each in paths : 
+				if not assetPath in each : 
+					invalidPath.append(each)
+
+		if invalidPath : 
+			return [False, invalidPath]
+
+		else : 
+			return [True, invalidPath]
+
+	else : 
+		return [True, 'Not check for this department']
+
+def removeUnknownPlugin() : 
+	from tool.utils import pipelineTools 
+	reload(pipelineTools)
+	result = pipelineTools.removeUnknownPlugin()
+
+	if result : 
+		return [True, result]
+
+	else : 
+		return [False, result]
+
+
+def rigGrpHiddenCheck() : 
+	for obj in pm.ls(type='transform'):
+		obj.hiddenInOutliner.unlock()
+		obj.hiddenInOutliner.set(False)
+
+	return [True, None]

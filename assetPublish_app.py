@@ -29,7 +29,7 @@ reload(fileUtils)
 reload(projectInfo)
 reload(mayaTools)
 
-from tool.utils import entityInfo2 as entityInfo
+from tool.utils import entityInfo
 reload(entityInfo)
 
 # logger 
@@ -112,6 +112,7 @@ class MyForm(QtGui.QMainWindow):
 		self.statusMap = self.getProjectSetting('statusMap')
 		self.outputMap = self.getProjectSetting('outputMap')
 		self.svPublishFile = self.asset.publishFile()
+		self.logFile = self.asset.getLogPath()
 
 	def initFunctions(self) : 
 		# UI
@@ -122,6 +123,9 @@ class MyForm(QtGui.QMainWindow):
 		self.ui.screenShot_pushButton.clicked.connect(self.doSnapScreen)
 		self.ui.publish_pushButton.clicked.connect(self.doPublish)
 		self.ui.publish_listWidget.itemSelectionChanged.connect(self.doDisplayThumbnail)
+
+		self.ui.browse1_pushButton.clicked.connect(self.doBrowseImage)
+		self.ui.browse2_pushButton.clicked.connect(self.doBrowseMedia)
 
 		self.ui.thumbnail_lineEdit.textChanged.connect(self.runRecheck)
 		# self.ui.media_lineEdit.textChanged.connect(self.runRecheck)
@@ -175,7 +179,9 @@ class MyForm(QtGui.QMainWindow):
 		if publishFile : 
 			self.ui.publish_label.setText(os.path.basename(publishFile))
 
+
 		dependency = self.getDependency()
+		print dependency
 
 		if dependency : 
 			text = '/'.join(dependency)
@@ -187,9 +193,35 @@ class MyForm(QtGui.QMainWindow):
 			text = '/'.join(output)
 			self.ui.output_label.setText(str(text))
 
+		# set increment file 
+		incrementFile = self.getFileToIncrement()
+
+		if incrementFile : 
+			self.ui.incrementFile_lineEdit.setText(incrementFile)
+			self.ui.incrementRoolFile_checkBox.setChecked(True)
+
+		else : 
+			self.ui.incrementFile_lineEdit.setEnabled(False)
+			# self.ui.incrementFile_lineEdit.setText(self.asset.thisScene())
+
+		self.ui.texture_checkBox.setEnabled(False)
+		if self.asset.department() == self.asset.uv: 
+			self.ui.texture_checkBox.setEnabled(True)
+
+
+	def getFileToIncrement(self) : 
+		duplicatedFiles = self.asset.duplicateVersion()
+		thisFile = os.path.basename(self.asset.thisScene())
+
+		if len(duplicatedFiles) > 1 : 
+			# duplicate return lowest index
+			return duplicatedFiles[0]
+
+
 	
 	def getDependency(self) : 
 		kw = '%s-%s' % (self.asset.department(), self.asset.task())
+		print kw
 		if kw in self.statusMap.keys() : 
 			dependency = self.statusMap[kw]
 			return dependency 
@@ -220,7 +252,7 @@ class MyForm(QtGui.QMainWindow):
 			settingValue = setting.projectSetting['all']
 
 		value = setting.settingMap[settingValue]
-
+		# print value
 		if value : 
 			if settingType == 'statusMap' : 
 				return value['statusMap']
@@ -252,6 +284,26 @@ class MyForm(QtGui.QMainWindow):
 		self.preCheck()
 
 
+	def doBrowseImage(self) : 
+		path = self.asset.getPath(self.asset.department(), self.asset.task())
+		imgPath = '%s/%s' % (path, self.asset.images)
+
+		fileName = QtGui.QFileDialog.getOpenFileName(self,'File Browse',imgPath,'Media(*.png *.tif *.exr *.jpg *.jpeg)')
+
+		if fileName : 
+			self.ui.thumbnail_lineEdit.setText(fileName[0])
+
+
+	def doBrowseMedia(self) : 
+		path = self.asset.getPath(self.asset.department(), self.asset.task())
+		mediaPath = '%s/%s' % (path, self.asset.images)
+
+		fileName = QtGui.QFileDialog.getOpenFileName(self,'File Browse',mediaPath,'Media(*.mov *.mp4 *.avi)')
+
+		if fileName : 
+			self.ui.media_lineEdit.setText(fileName[0])
+
+
 	def doPublish(self) : 
 		# start time
 		start = datetime.now()
@@ -261,6 +313,8 @@ class MyForm(QtGui.QMainWindow):
 		allowPublish, resultList = self.check()
 
 		if allowPublish : 
+			result1 = None
+			result2 = None
 
 			# publish files 
 			if self.ui.publishFile_checkBox.isChecked() : 
@@ -280,7 +334,13 @@ class MyForm(QtGui.QMainWindow):
 			self.setDuration(duration, 'total')
 			self.refresh()
 			self.ui.publish_pushButton.setEnabled(False)
-			self.completeDialog('Publish Complete', 'Publish %s - %s Complete' % (self.asset.name(), self.asset.task()))
+
+			if result1 and result2 : 
+				self.completeDialog('Publish Complete', 'Publish %s - %s Complete' % (self.asset.name(), self.asset.task()))
+
+			else : 
+				self.completeDialog('Publish not complete', 'Publish %s - %s Not Complete' % (self.asset.name(), self.asset.task()))
+
 
 		else : 
 			for each in resultList : 
@@ -325,51 +385,53 @@ class MyForm(QtGui.QMainWindow):
 		self.setStatus('--- Pre-Check ---', True, [40, 40, 40], 0)
 
 		# pipeline check 
-		results = check.pipelineCheck()
+		results = check.pipelineCheck(self.asset)
 
-		# add info 
-		infoResult = self.addInfo()
-		results.update(infoResult)
+		if results : 
 
-		# check screen shot 
-		dst = self.asset.publishImageFile()
-		
-		if str(self.ui.thumbnail_lineEdit.text()) : 
-			dst = str(self.ui.thumbnail_lineEdit.text())
+			# add info 
+			infoResult = self.addInfo()
+			results.update(infoResult)
 
-		if dst : 
-			if os.path.exists(dst) : 
-				results.update({'screenShot': {'status': True, 'message': ''}})
-				self.checkList['screenShot'] = True
-
-				# display 
-				self.displayCapture(dst, 0.5)
-
-			# check dependency
-			dependency = self.getDependency()
-			outputFile = self.getOutputStep()
-
-			dStatus = True 
-			dMessage = ''
-			if not dependency and not outputFile : 
-				dStatus = False 
-				dMessage = 'No task found "%s"' % self.asset.task()
-
-			results.update({'Check dependency': {'status': dStatus, 'message': dMessage}})
+			# check screen shot 
+			dst = self.asset.publishImageFile()
 			
-			# loop setting status 
-			for each in sorted(results) : 
-				title = each
-				status = results[each]['status']
-				message = results[each]['message']
-				self.setStatus(title, status)
+			if str(self.ui.thumbnail_lineEdit.text()) : 
+				dst = str(self.ui.thumbnail_lineEdit.text())
 
-				if not status : 
-					logger.debug(title)
-					logger.debug('Error Message : %s' % message)
-					allowPublish = False
+			if dst : 
+				if os.path.exists(dst) : 
+					results.update({'screenShot': {'status': True, 'message': ''}})
+					self.checkList['screenShot'] = True
 
-			self.ui.publish_pushButton.setEnabled(allowPublish)
+					# display 
+					self.displayCapture(dst, 0.5)
+
+				# check dependency
+				dependency = self.getDependency()
+				outputFile = self.getOutputStep()
+
+				dStatus = True 
+				dMessage = ''
+				if not dependency and not outputFile : 
+					dStatus = False 
+					dMessage = 'No task found "%s"' % self.asset.task()
+
+				results.update({'Check dependency': {'status': dStatus, 'message': dMessage}})
+				
+				# loop setting status 
+				for each in sorted(results) : 
+					title = each
+					status = results[each]['status']
+					message = results[each]['message']
+					self.setStatus(title, status)
+
+					if not status : 
+						logger.debug(title)
+						logger.debug('Error Message : %s' % message)
+						allowPublish = False
+
+				self.ui.publish_pushButton.setEnabled(allowPublish)
 
 
 	def publishShotgun(self) : 
@@ -387,6 +449,7 @@ class MyForm(QtGui.QMainWindow):
 		thumbnail = str(self.ui.thumbnail_lineEdit.text())
 		media = str(self.ui.media_lineEdit.text())
 		sg_status_list = self.sgStatusMap[status]
+		task_sg_status_list = self.getShotgunStatus(status)
 		
 		# entity value
 		project = self.asset.project()
@@ -401,7 +464,15 @@ class MyForm(QtGui.QMainWindow):
 		''' version ''' 
 		logger.debug('Create version %s' % publishFile)
 		logger.debug('%s %s %s %s %s %s %s %s %s' % (project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user))
-		versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user)
+
+		try : 
+			versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user)
+
+		except Exception as e : 
+			logger.info('No asset in Shotgun')
+			logger.debug(e)
+			return False
+
 		self.setStatus('Create version %s' % publishFile, versionEntity)
 		logger.info('Create version %s %s' % (publishFile, versionEntity))
 
@@ -424,12 +495,23 @@ class MyForm(QtGui.QMainWindow):
 
 			''' set task and dependency tasks ''' 
 			logger.debug('Set task')
-			taskResult = shotgunPublish.publishTask(self.asset, assetEntity, stepName, taskEntity, sg_status_list, self.svPublishFile)
+			taskResult = shotgunPublish.publishTask(self.asset, assetEntity, stepName, taskEntity, task_sg_status_list, self.svPublishFile)
 			self.setStatus('Set Task', taskResult)
 			
 			''' set geo info ID ''' 
 			# set ID 
 			pipelineTools.setGeoInfo('id', assetEntity['id'])
+
+		return True
+
+
+	def getShotgunStatus(self, status) : 
+		sg_status_list = self.sgStatusMap[status]
+		if self.asset.department() in setting.shotgunStatusOverride : 
+			return setting.overrideStatus
+
+		else : 
+			return sg_status_list
 
 
 	''' cmds ''' 
@@ -449,7 +531,7 @@ class MyForm(QtGui.QMainWindow):
 
 			# save file 
 			logger.debug('Saving file -> %s' % saveFile)
-			saveResult = hook.save(saveFile)
+			saveResult = hook.save(saveFile, rename = False)
 			logger.info('Save file done %s' % saveResult)
 			self.setStatus('Save', saveResult)
 
@@ -464,7 +546,7 @@ class MyForm(QtGui.QMainWindow):
 			batch = not self.ui.noBatch_checkBox.isChecked()
 			refPath = self.asset.getPath('ref')
 			logger.debug('Extra export -> %s' % refPath)
-			extraResults = extra.publish(self.asset, batch)
+			extraResults = extra.publish(self.asset, batch, mainUI=self)
 
 			if extraResults : 
 				for each in extraResults : 
@@ -485,8 +567,22 @@ class MyForm(QtGui.QMainWindow):
 				logger.debug('Increment file -> %s' % incrementFile)
 
 				# increment file
+				# check increment override with root file 
+				fileToIncrement = str(self.ui.incrementFile_lineEdit.text())
+				incrementOverride = False 
+				
+				if os.path.exists(fileToIncrement) and self.ui.incrementRoolFile_checkBox.isChecked() : 
+					incrementOverride = True
+
 				if batch : 
-					incrementResult = hook.save(incrementFile)
+					if not incrementOverride : 
+						incrementResult = hook.save(incrementFile)
+
+					# override increment 
+					else : 
+						increment = entityInfo.info(fileToIncrement)
+						incrementFile = increment.nextVersion()
+						incrementResult = fileUtils.copy(fileToIncrement, incrementFile)
 
 				else : 
 					incrementResult = fileUtils.copy(saveResult, incrementFile)
@@ -494,6 +590,8 @@ class MyForm(QtGui.QMainWindow):
 				if incrementResult : 
 					self.setStatus('Increment File', incrementResult)
 					logger.info('Increment file to %s' % incrementFile)
+
+		return True
 
 
 	def listPublishFiles(self) : 
@@ -534,6 +632,8 @@ class MyForm(QtGui.QMainWindow):
 			# assign basic info 
 			pipelineTools.setGeoInfo('project', self.asset.project())
 			pipelineTools.setGeoInfo('assetName', self.asset.name())
+			pipelineTools.setGeoInfo('ref', self.asset.getPath('ref'))
+			pipelineTools.setGeoInfo('lod', self.asset.taskLOD())
 			data = pipelineTools.readGeoInfo('data')
 
 			# assign data 
@@ -545,6 +645,9 @@ class MyForm(QtGui.QMainWindow):
 				datas.append(self.asset.fileName())
 
 			pipelineTools.setGeoInfo('data', str(datas))
+
+			if self.asset.department() in setting.addInfoDep : 
+				pipelineTools.autoAssign()
 
 			return {'Add info': {'status': True, 'message': ''}}
 
@@ -562,10 +665,6 @@ class MyForm(QtGui.QMainWindow):
 		current = str(self.ui.thumbnail_lineEdit.text())
 		currentMedia = str(self.ui.media_lineEdit.text())
 
-		print targetFile
-		print current
-		print currentMedia
-
 		if os.path.exists(current) : 
 			if not current == targetFile : 
 				fileUtils.copy(current, targetFile)
@@ -573,6 +672,12 @@ class MyForm(QtGui.QMainWindow):
 
 			else : 
 				logger.debug('Thumbnail not copy')
+
+			# copy to images/icon 
+			if self.asset.department() in setting.heroIconDept : 
+				heroIcon = self.asset.getPath('icon')
+				fileUtils.copy(current, heroIcon)
+				logger.debug('Copy hero thumbnail')
 
 		if os.path.exists(currentMedia) : 
 			ext = currentMedia.split('.')[-1]

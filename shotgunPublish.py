@@ -68,78 +68,83 @@ def publishTask(asset, entity, stepName, taskEntity, status, path) :
 
 		# update downstream
 		stepTask = '%s-%s' % (stepName, task)
+		print stepTask
+		print statusMap2.keys()
 
 		if stepTask in statusMap2.keys() : 
 			targetTasks = statusMap2[stepTask]
 
+			filters = [['entity','is', entity]]
+			fields = ['content', 'id', 'project', 'step']
+			taskEntities = sg.find('Task', filters, fields)
+
+			if taskEntities : 
+				sgTaskDict = getTaskEntityInfo(taskEntities)
+				projectEntity = taskEntities[0]['project']
+
+				for targetTask in targetTasks : 
+					if targetTask in sgTaskDict.keys() : 
+						# update 
+						data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
+						taskID = sgTaskDict[targetTask]['id']
+						result = sg.update('Task', taskID, data)
+						logger.debug('Update dependency %s -> %s' % (targetTask, path))
+
+					else : 
+						taskName = targetTask.split('-')[-1]
+						step = setting.steps[targetTask.split('-')[0]]
+						data = {'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 
+								'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}, 'sg_status_list': 'aprv'}
+
+						result = sg.create('Task', data)
+						logger.debug('Create task dependency %s -> %s' % (taskName, path))
+			
 			if stepTask in outputMap2.keys() : 
 				targetHeroTasks = outputMap2[stepTask]
 
-				filters = [['entity','is', entity]]
-				fields = ['content', 'id', 'project', 'step']
-				taskEntities = sg.find('Task', filters, fields)
+				for targetHeroTask in targetHeroTasks : 
+					publish = True
+					# check if this asset type need to export output 
+					if targetHeroTask in setting.checkExportSetting.keys() : 
+						exportType = setting.checkExportSetting[targetHeroTask]
 
-				if taskEntities : 
-					sgTaskDict = getTaskEntityInfo(taskEntities)
-					projectEntity = taskEntities[0]['project']
+						if not asset.type() in exportType : 
+							publish = False
 
-					for targetTask in targetTasks : 
-						if targetTask in sgTaskDict.keys() : 
-							# update 
-							data = {'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}}
-							taskID = sgTaskDict[targetTask]['id']
-							result = sg.update('Task', taskID, data)
-							logger.debug('Update dependency %s -> %s' % (targetTask, path))
+					if publish : 
+						data = dict()
+						heroStatus = 'udt'
+
+						# check output file exists 
+						outputFile = getOutputFile(asset, targetHeroTask)
+						if outputFile : 	
+							if os.path.exists(outputFile) : 
+								heroStatus = 'aprv'
+								
+								if asset.department() in setting.shotgunStatusOverride : 
+									heroStatus = setting.overrideStatus
+
+							data.update({'sg_hero_2' : {'local_path': outputFile, 'name': os.path.basename(outputFile)}})
+							logger.debug('Add output path %s' % outputFile)
 
 						else : 
-							taskName = targetTask.split('-')[-1]
-							step = setting.steps[targetTask.split('-')[0]]
-							data = {'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 
-									'sg_workfile' : {'local_path': path, 'name': os.path.basename(path)}, 'sg_status_list': 'aprv'}
+							logger.debug('Output not found %s - %s' % (targetHeroTask, outputFile))
+
+						if targetHeroTask in sgTaskDict.keys() : 
+							# update 		
+							data.update({'sg_status_list': heroStatus})
+							taskID = sgTaskDict[targetHeroTask]['id']
+							result = sg.update('Task', taskID, data)
+							logger.debug('Update dependency %s -> %s' % (targetHeroTask, outputFile))
+
+						else : 
+							# create 
+							taskName = targetHeroTask.split('-')[-1]
+							step = setting.steps[targetHeroTask.split('-')[0]]
+							data.update({'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 'sg_status_list': 'aprv'})
 
 							result = sg.create('Task', data)
-							logger.debug('Create task dependency %s -> %s' % (taskName, path))
-
-					for targetHeroTask in targetHeroTasks : 
-						publish = True
-						# check if this asset type need to export output 
-						if targetHeroTask in setting.checkExportSetting.keys() : 
-							exportType = setting.checkExportSetting[targetHeroTask]
-
-							if not asset.type() in exportType : 
-								publish = False
-
-						if publish : 
-							data = dict()
-							heroStatus = 'udt'
-
-							# check output file exists 
-							outputFile = getOutputFile(asset, targetHeroTask)
-							if outputFile : 	
-								if os.path.exists(outputFile) : 
-									heroStatus = 'aprv'
-
-								data.update({'sg_hero_2' : {'local_path': outputFile, 'name': os.path.basename(outputFile)}})
-								logger.debug('Add output path %s' % outputFile)
-
-							else : 
-								logger.debug('Output not found %s - %s' % (targetHeroTask, outputFile))
-
-							if targetHeroTask in sgTaskDict.keys() : 
-								# update 		
-								data.update({'sg_status_list': heroStatus})
-								taskID = sgTaskDict[targetHeroTask]['id']
-								result = sg.update('Task', taskID, data)
-								logger.debug('Update dependency %s -> %s' % (targetHeroTask, outputFile))
-
-							else : 
-								# create 
-								taskName = targetHeroTask.split('-')[-1]
-								step = setting.steps[targetHeroTask.split('-')[0]]
-								data.update({'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 'sg_status_list': 'aprv'})
-
-								result = sg.create('Task', data)
-								logger.debug('Create output task dependency %s -> %s' % (taskName, outputFile))
+							logger.debug('Create output task dependency %s -> %s' % (taskName, outputFile))
 
 
 
@@ -249,7 +254,11 @@ def uploadMedia(versionEntity, media) :
 def uploadThumbnail(versionEntity, thumbnail) : 
 	# upload thumbnail 
 	thumbnail = thumbnail.replace('/', '\\')
-	thumbnailResult = sg.upload_thumbnail('Version', versionEntity['id'], thumbnail)
-	# logger.debug('Upload thumbnail %s' % thumbnailResult)
+	if os.path.exists(thumbnail) : 
+		thumbnailResult = sg.upload_thumbnail('Version', versionEntity['id'], thumbnail)
+		# logger.debug('Upload thumbnail %s' % thumbnailResult)
 
-	return thumbnailResult
+		return thumbnailResult
+
+	else : 
+		logger.debug('thumbnail %s not exists' % thumbnail)

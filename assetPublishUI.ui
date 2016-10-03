@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1013</width>
-    <height>679</height>
+    <height>678</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -529,6 +529,33 @@
            </widget>
           </item>
           <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QLabel" name="label_18">
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>File to increment : </string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="incrementFile_lineEdit"/>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="incrementRoolFile_checkBox">
+              <property name="text">
+               <string>Use Root File</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -536,6 +563,16 @@
                <widget class="QCheckBox" name="noBatch_checkBox">
                 <property name="text">
                  <string>Run Batch mode in current session</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="texture_checkBox">
+                <property name="text">
+                 <string>Convert Texture</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>
