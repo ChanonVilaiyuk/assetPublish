@@ -32,7 +32,7 @@ statusMap2 = setting.statusMap2
 outputMap2 = setting.outputMap2
 
 
-def publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, status, user) : 
+def publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, status, user, description='', revisionLink='') : 
 	# create version 
 	logger.debug('publishVersion --------------------------------------------------')
 	assetEntity = getAssetID(project, assetType, assetSubType, assetName)
@@ -44,7 +44,7 @@ def publishVersion(project, assetType, assetSubType, assetName, stepName, taskNa
 		taskEntity = getTaskID(assetEntity, stepName, taskName)
 
 		if taskEntity : 
-			versionEntity = createVersion(projectEntity, assetEntity, taskEntity, publishFile, status, userEntity, description = '')
+			versionEntity = createVersion(projectEntity, assetEntity, taskEntity, publishFile, status, userEntity, description=description, revisionLink=revisionLink)
 
 			return versionEntity, assetEntity, taskEntity
 
@@ -224,13 +224,17 @@ def getTaskEntityInfo(taskEntities) :
 	return sgTaskDict
 
 
-def createVersion(projectEntity, entity, taskEntity, versionName, status, userEntity, description) : 
+def createVersion(projectEntity, entity, taskEntity, versionName, status, userEntity, description, revisionLink='') : 
 	data = { 'project': projectEntity,
 			 'code': versionName,
 			 'entity': entity,
 			 'sg_task': taskEntity,
 			 'sg_status_list': status, 
 			 'description' : description}
+
+	if revisionLink: 
+		data.update
+		data.update({'sg_revision_dir': {'local_path': revisionLink, 'name': os.path.split(revisionLink)[-1]}})
 
 	if userEntity : 
 		data.update({'user': userEntity})

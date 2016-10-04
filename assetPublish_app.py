@@ -11,9 +11,9 @@ from qtshim import QtCore, QtGui
 from qtshim import Signal
 from qtshim import wrapinstance
 
-from tool.publish.asset import assetPublishUI as ui
-from tool.publish.asset import mayaHook as hook
-from tool.publish.asset import check, shotgunPublish, extra, setting
+from tool.publish.asset_dev import assetPublishUI as ui
+from tool.publish.asset_dev import mayaHook as hook
+from tool.publish.asset_dev import check, shotgunPublish, extra, setting
 reload(ui)
 reload(hook)
 reload(check)
@@ -66,7 +66,7 @@ class MyForm(QtGui.QMainWindow):
 		# QtGui.QWidget.__init__(self, parent)
 		self.ui = ui.Ui_AssetPublishWin()
 		self.ui.setupUi(self)
-		self.setWindowTitle('PT Asset Publish v.1.0')
+		self.setWindowTitle('PT Asset Publish v.1.1')
 
 		# icons 
 		self.logo = '%s/%s' % (os.path.dirname(moduleDir), 'icons/logo.png')
@@ -87,7 +87,7 @@ class MyForm(QtGui.QMainWindow):
 		# data
 		self.screenShotDst = str()
 
-		self.checkList = {'screenShot': False}
+		self.checkList = {'screenShot': False, 'Revision Details': False}
 
 		self.initData()
 		self.initFunctions()
@@ -129,10 +129,16 @@ class MyForm(QtGui.QMainWindow):
 
 		self.ui.thumbnail_lineEdit.textChanged.connect(self.runRecheck)
 		# self.ui.media_lineEdit.textChanged.connect(self.runRecheck)
+		self.ui.snap_pushButton.clicked.connect(self.doSnapRevision)
 
 		# right click 
 		self.ui.ref_listWidget.customContextMenuRequested.connect(self.showMenu)
 		self.ui.publish_listWidget.customContextMenuRequested.connect(self.showMenu2)
+
+		# snap 
+		self.ui.snap_listWidget.itemSelectionChanged.connect(self.showSnapRevision)
+		self.ui.removeSnap_pushButton.clicked.connect(self.removeSnapRevision)
+		self.ui.message_plainTextEdit.cursorPositionChanged.connect(self.revisionTextCheck)
 
 
 	def fillUI(self) : 
@@ -153,6 +159,9 @@ class MyForm(QtGui.QMainWindow):
 
 		# pre check 
 		self.preCheck()
+
+		# list revision
+		self.listSnapRevision()
 
 
 	def runRecheck(self) : 
@@ -272,7 +281,7 @@ class MyForm(QtGui.QMainWindow):
 		result = hook.snapShotCmd(dst, self.w, self.h)
 
 		if result : 
-			self.displayCapture(result, 0.5)
+			self.displayCapture(self.ui.snap_label, result, 0.5)
 			self.checkList['screenShot'] = True
 			self.screenShotDst = result
 
@@ -282,6 +291,49 @@ class MyForm(QtGui.QMainWindow):
 
 
 		self.preCheck()
+
+	def doSnapRevision(self): 
+		version = self.asset.getPublishVersion(padding=True)
+		revisionDir = ('/').join([self.asset.getPath(), self.asset.publish, self.asset.department(), self.asset.task(), version])
+		revFile = self.getRevisionVersion(revisionDir, version)
+
+		if not os.path.exists(revisionDir): 
+			os.makedirs(revisionDir)
+
+		result = hook.snapShotCmd(revFile, self.w, self.h)
+
+		if result : 
+			self.displayCapture(self.ui.preview_label, result, 0.4)
+
+		self.listSnapRevision()
+		self.preCheck()
+
+	def listSnapRevision(self): 
+		""" list snap shot """ 
+		version = self.asset.getPublishVersion(padding=True)
+		revisionDir = ('/').join([self.asset.getPath(), self.asset.publish, self.asset.department(), self.asset.task(), version])
+		files = fileUtils.listFile(revisionDir)
+		self.ui.snap_listWidget.clear()
+
+		for each in files: 
+			iconPath = '%s/%s' % (revisionDir, each)
+			self.addListWidgetItem('snap_listWidget', iconPath=iconPath, color=[0, 0, 0], addIcon = 1, data=iconPath, size=100)
+
+	def showSnapRevision(self): 
+		item = self.ui.snap_listWidget.currentItem()
+		if item: 
+			iconPath = item.data(QtCore.Qt.UserRole)
+			self.displayCapture(self.ui.preview_label, iconPath, 0.4)
+
+	def removeSnapRevision(self): 
+		item = self.ui.snap_listWidget.currentItem()
+		if item: 
+			self.ui.snap_listWidget.takeItem(self.ui.snap_listWidget.currentRow())
+			iconPath = item.data(QtCore.Qt.UserRole)
+			os.remove(iconPath)
+
+	def revisionTextCheck(self): 
+		self.ui.message_plainTextEdit.setStyleSheet('')
 
 
 	def doBrowseImage(self) : 
@@ -308,44 +360,46 @@ class MyForm(QtGui.QMainWindow):
 		# start time
 		start = datetime.now()
 
-		# self.check
-		# check 
-		allowPublish, resultList = self.check()
+		if self.inputCheck(): 
 
-		if allowPublish : 
-			result1 = None
-			result2 = None
+			# self.check
+			# check 
+			allowPublish, resultList = self.check()
 
-			# publish files 
-			if self.ui.publishFile_checkBox.isChecked() : 
-				result1 = self.publishFile()
+			if allowPublish : 
+				result1 = None
+				result2 = None
+
+				# publish files 
+				if self.ui.publishFile_checkBox.isChecked() : 
+					result1 = self.publishFile()
+					duration = datetime.now() - start 
+					self.setDuration(duration, 'sum')
+
+				# publish shotgun 
+				if self.ui.publishShotgun_checkBox.isChecked() : 
+					start2 = datetime.now()
+					result2 = self.publishShotgun()
+					duration = datetime.now() - start2 
+					self.setDuration(duration, 'sum')
+
+				# set total
 				duration = datetime.now() - start 
-				self.setDuration(duration, 'sum')
+				self.setDuration(duration, 'total')
+				self.refresh()
+				self.ui.publish_pushButton.setEnabled(False)
 
-			# publish shotgun 
-			if self.ui.publishShotgun_checkBox.isChecked() : 
-				start2 = datetime.now()
-				result2 = self.publishShotgun()
-				duration = datetime.now() - start2 
-				self.setDuration(duration, 'sum')
+				if result1 and result2 : 
+					self.completeDialog('Publish Complete', 'Publish %s - %s Complete' % (self.asset.name(), self.asset.task()))
 
-			# set total
-			duration = datetime.now() - start 
-			self.setDuration(duration, 'total')
-			self.refresh()
-			self.ui.publish_pushButton.setEnabled(False)
+				else : 
+					self.completeDialog('Publish not complete', 'Publish %s - %s Not Complete' % (self.asset.name(), self.asset.task()))
 
-			if result1 and result2 : 
-				self.completeDialog('Publish Complete', 'Publish %s - %s Complete' % (self.asset.name(), self.asset.task()))
 
 			else : 
-				self.completeDialog('Publish not complete', 'Publish %s - %s Not Complete' % (self.asset.name(), self.asset.task()))
-
-
-		else : 
-			for each in resultList : 
-				status = resultList[each]['status']
-				self.setStatus(each, status) 
+				for each in resultList : 
+					status = resultList[each]['status']
+					self.setStatus(each, status) 
 
 
 	def doDisplayThumbnail(self) : 
@@ -357,7 +411,7 @@ class MyForm(QtGui.QMainWindow):
 			selection = str(sel.text())
 			fileName = '%s.%s' % (selection.split('.')[0], ext)
 			filePath = '%s/%s' % (thumbnailDir, fileName)
-			self.displayCapture(filePath, 0.5)
+			self.displayCapture(self.ui.snap_label, filePath, 0.5)
 
 
 	def check(self) : 
@@ -374,6 +428,25 @@ class MyForm(QtGui.QMainWindow):
 
 		return allowPublish, resultList
 
+	def inputCheck(self): 
+		# check input description 
+		if self.ui.message_plainTextEdit.toPlainText(): 
+			return True 
+
+		else: 
+			QtGui.QMessageBox.question(self, 'Warning', 'Please write commit message')
+			self.ui.message_plainTextEdit.setStyleSheet('background-color: rgb(%s, %s, %s);' % (120, 40, 40))
+
+	def checkRevision(self): 
+		""" check if any snap png in revision dir """ 
+		version = self.asset.getPublishVersion(padding=True)
+		revisionDir = ('/').join([self.asset.getPath(), self.asset.publish, self.asset.department(), self.asset.task(), version])
+
+		files = fileUtils.listFile(revisionDir)
+		if not files: 
+			return False 
+
+		return True 
 
 	def preCheck(self) : 
 		allowPublish = True
@@ -393,6 +466,13 @@ class MyForm(QtGui.QMainWindow):
 			infoResult = self.addInfo()
 			results.update(infoResult)
 
+			# check revision details 
+			results.update({'Revision Details': {'status': False, 'message': 'Please snap changes details'}})
+
+			if self.checkRevision(): 
+				results.update({'Revision Details': {'status': True, 'message': ''}})
+				self.checkList['Revision Details'] = True
+
 			# check screen shot 
 			dst = self.asset.publishImageFile()
 			
@@ -405,7 +485,7 @@ class MyForm(QtGui.QMainWindow):
 					self.checkList['screenShot'] = True
 
 					# display 
-					self.displayCapture(dst, 0.5)
+					self.displayCapture(self.ui.snap_label, dst, 0.5)
 
 				# check dependency
 				dependency = self.getDependency()
@@ -460,13 +540,17 @@ class MyForm(QtGui.QMainWindow):
 		taskName = self.asset.task()
 		publishFile = os.path.basename(self.svPublishFile).split('.')[0]
 		user = hook.getUser()
+		description = str(self.ui.message_plainTextEdit.toPlainText())
+
+		version = self.asset.getPublishVersion(padding=True)
+		revisionDir = '%s\\' % ('/').join([self.asset.getPath(), self.asset.publish, self.asset.department(), self.asset.task(), version]).replace('/', '\\')
 
 		''' version ''' 
 		logger.debug('Create version %s' % publishFile)
 		logger.debug('%s %s %s %s %s %s %s %s %s' % (project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user))
 
 		try : 
-			versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user)
+			versionEntity, assetEntity, taskEntity = shotgunPublish.publishVersion(project, assetType, assetSubType, assetName, stepName, taskName, publishFile, sg_status_list, user, description, revisionDir)
 
 		except Exception as e : 
 			logger.info('No asset in Shotgun')
@@ -812,11 +896,37 @@ class MyForm(QtGui.QMainWindow):
 		else : 
 			self.messageBox('Error', '%s not found' % path)
 
+	def getRevisionVersion(self, revisionDir, version): 
+		files = fileUtils.listFile(revisionDir, 'png')
 
-	def displayCapture(self, iconPath, display = 1) : 
+		if files: 
+			lastFile = sorted(files)[-1]
+			digit = lastFile.split('.')[-2]
+
+			if digit.isdigit(): 
+				nextVersion = int(digit) + 1 
+				padNum = '%03d' % nextVersion
+				# Result: frz_sinkholeGndA_model_md #
+
+			else: 
+				padNum = '001'
+
+		else: 
+			padNum = '001'
+
+		baseFile = self.asset.getFileNaming()
+		fileName = '%s_%s_revision.%s.png' % (baseFile, version, padNum)
+		snapFile = '%s/%s' % (revisionDir, fileName)
+
+		return snapFile
+		
+
+
+
+	def displayCapture(self, widget, iconPath, display = 1) : 
 		w = self.h * display
 		h = self.w * display
-		self.ui.snap_label.setPixmap(QtGui.QPixmap(iconPath).scaled(w, h, QtCore.Qt.KeepAspectRatio))
+		widget.setPixmap(QtGui.QPixmap(iconPath).scaled(w, h, QtCore.Qt.KeepAspectRatio))
 
 
 	def setStatus(self, text, status, color = [0, 0, 0], icon = 1) : 
@@ -848,7 +958,7 @@ class MyForm(QtGui.QMainWindow):
 
 
 	''' UI widget utils '''
-	def addListWidgetItem(self, listWidget, text, iconPath, color, addIcon = 1) : 
+	def addListWidgetItem(self, listWidget, text='', iconPath='', color=[], addIcon = 1, data='', size=16) : 
 		cmd = 'QtGui.QListWidgetItem(self.ui.%s)' % listWidget
 		item = eval(cmd)
 
@@ -857,14 +967,16 @@ class MyForm(QtGui.QMainWindow):
 			icon.addPixmap(QtGui.QPixmap(iconPath),QtGui.QIcon.Normal,QtGui.QIcon.Off)
 			item.setIcon(icon)
 
-		item.setText(text)
+		if data: 
+			item.setData(QtCore.Qt.UserRole, data)
+
+		if text: 
+			item.setText(text)
 		item.setBackground(QtGui.QColor(color[0], color[1], color[2]))
-		size = 16
 
 		cmd2 = 'self.ui.%s.setIconSize(QtCore.QSize(%s, %s))' % (listWidget, size, size)
 		eval(cmd2)
 		QtGui.QApplication.processEvents()
-
 
 	def addComboBoxItem(self, i, text, iconPath) : 
 		self.ui.status_comboBox.addItem(text)
