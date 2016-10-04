@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'O:/studioTools/maya/python/tool/publish/asset_dev/assetPublishUI.ui'
 #
-# Created: Tue Oct 04 11:52:21 2016
+# Created: Tue Oct 04 16:28:21 2016
 #      by: pyside-uic 0.2.14 running on PySide 1.2.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -433,7 +433,7 @@ class Ui_AssetPublishWin(object):
         AssetPublishWin.setMenuBar(self.menubar)
 
         self.retranslateUi(AssetPublishWin)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(AssetPublishWin)
 
     def retranslateUi(self, AssetPublishWin):
