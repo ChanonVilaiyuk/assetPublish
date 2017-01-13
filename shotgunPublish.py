@@ -42,9 +42,11 @@ def publishVersion(project, assetType, assetSubType, assetName, stepName, taskNa
 		assetID = assetEntity['id']
 		projectEntity = assetEntity['project']
 		taskEntity = getTaskID(assetEntity, stepName, taskName)
+		playlistEntity = sgCreatePlaylistByDate(project, taskName)
+		globalPlaylistEntity = sgCreatePlaylistByDate(project, 'asset')
 
 		if taskEntity : 
-			versionEntity = createVersion(projectEntity, assetEntity, taskEntity, publishFile, status, userEntity, description=description, revisionLink=revisionLink)
+			versionEntity = createVersion(projectEntity, assetEntity, taskEntity, publishFile, status, userEntity, description=description, revisionLink=revisionLink, playlistEntity=playlistEntity, globalPlaylistEntity=globalPlaylistEntity)
 
 			return versionEntity, assetEntity, taskEntity
 
@@ -141,7 +143,8 @@ def publishTask(asset, entity, stepName, taskEntity, status, path) :
 							# create 
 							taskName = targetHeroTask.split('-')[-1]
 							step = setting.steps[targetHeroTask.split('-')[0]]
-							data.update({'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 'sg_status_list': 'aprv'})
+							# data.update({'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 'sg_status_list': 'aprv'})
+							data.update({'project': projectEntity, 'content': taskName, 'entity': entity, 'step': step, 'sg_status_list': status})
 
 							result = sg.create('Task', data)
 							logger.debug('Create output task dependency %s -> %s' % (taskName, outputFile))
@@ -224,7 +227,8 @@ def getTaskEntityInfo(taskEntities) :
 	return sgTaskDict
 
 
-def createVersion(projectEntity, entity, taskEntity, versionName, status, userEntity, description, revisionLink='') : 
+def createVersion(projectEntity, entity, taskEntity, versionName, status, userEntity, description, revisionLink='', playlistEntity=None, globalPlaylistEntity=None) : 
+	playlists = []
 	data = { 'project': projectEntity,
 			 'code': versionName,
 			 'entity': entity,
@@ -233,12 +237,19 @@ def createVersion(projectEntity, entity, taskEntity, versionName, status, userEn
 			 'description' : description}
 
 	if revisionLink: 
-		data.update
 		data.update({'sg_revision_dir': {'local_path': revisionLink, 'name': os.path.split(revisionLink)[-1]}})
 
 	if userEntity : 
 		data.update({'user': userEntity})
 
+	if playlistEntity: 
+		playlists.append(playlistEntity)
+
+	if globalPlaylistEntity: 
+		playlists.append(globalPlaylistEntity)
+		
+	if playlists: 
+		data.update({'playlists': playlists})
 	
 	# create version 
 	versionEntity = sg.create('Version', data)
@@ -266,3 +277,16 @@ def uploadThumbnail(versionEntity, thumbnail) :
 
 	else : 
 		logger.debug('thumbnail %s not exists' % thumbnail)
+
+def sgCreatePlaylistByDate(projectName, taskName, extra='') : 
+	proj = sg.find_one('Project', [['name', 'is', projectName]], ['name', 'sg_projcode'])
+	playlistName = '%s_%s_%s' % (proj['sg_projcode'], taskName, str(datetime.now()).split(' ')[0])
+	if extra : 
+		playlistName = '%s_%s_%s_%s' % (proj['sg_projcode'], taskName, extra, str(datetime.now()).split(' ')[0])
+	playlist = sg.find_one('Playlist', [['code', 'is', playlistName]], ['code'])
+
+	if not playlist : 
+		data = {'project': proj, 'code': playlistName}
+		playlist = sg.create('Playlist', data)
+
+	return playlist 

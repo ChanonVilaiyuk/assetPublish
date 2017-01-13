@@ -10,6 +10,8 @@ from tool.utils.batch import rigPublish
 reload(rigPublish)
 from tool.utils import pipelineTools as pt
 reload(pt)
+from tool.utils import abcUtils
+reload(abcUtils)
 
 
 def publish(asset) : 
@@ -30,6 +32,9 @@ def publish(asset) :
 		print 'hero-geo'
 		result3 = exportGeo(asset)
 		result.update(result3)
+
+	result4 = exportABC(asset)
+	result.update(result4)
 
 	return result
 
@@ -132,3 +137,14 @@ def exportGeo(asset, batch = True) :
 	returnResult.update({'Export %s' % refFile: {'status': status, 'message': message, 'hero': dst}})
 
 	return returnResult
+
+def exportABC(asset): 
+	publishFile = asset.publishFile(abc=True)
+	start = mc.currentTime(q=True)
+	end = mc.currentTime(q=True)
+	result = abcUtils.exportABC([setting.exportGrp], publishFile, start, end)
+	status = 'failed'
+	if result: 
+		status = 'success'
+
+	return {'ABC Export': {'status': status, 'message': result}}

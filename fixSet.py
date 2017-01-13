@@ -69,7 +69,8 @@ class MyForm(QtGui.QMainWindow):
         sets = mc.ls(setName)
 
         if sets: 
-            return sets[0]
+            if sets[0] == self.setName(): 
+                return sets[0]
 
 
     def createSet(self): 

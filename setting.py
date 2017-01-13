@@ -99,7 +99,9 @@ vrayProxyGrp = 'vproxy_grp'
 rigCmd = {'importRef': 'rigCmd.importRef()', 'clean': 'rigCmd.clean()', 'tmpShd': 'rigCmd.assignTmpShd()', 'removeSet': 'rigCmd.removeSets()', 'removeRig': 'rigCmd.removeRig()',
 			'keepVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = True)', 'removeVrayProxy': 'rigCmd.addRemoveVrayProxy(keep = False)', 'vProxy': 'rigCmd.vProxy()', 'removeVrayNode': 'rigCmd.removeVrayNode()', 
 			'combineGeo': 'rigCmd.combineGeo()', 'cleanAllSet': 'rigCmd.cleanAllSets()', 'exportShade': 'rigCmd.exportAssetShade()', 
-			'removeFixSet': 'rigCmd.removeFixSets()'}
+			'removeFixSet': 'rigCmd.removeFixSets()', 'removeUnknownPlugin': 'rigCmd.removeUnknownPlugin()', 
+			'hideRigDetails': 'rigCmd.hideRigDetails()', 'deleteNonDefaultCamera': 'rigCmd.deleteNonDefaultCamera()'
+			}
 
 heroIconDept = ['model', 'uv', 'surface']
 

@@ -43,9 +43,9 @@ def exportRig(asset, batch) :
 		backupResult = pt.backupRef(dst)
 
 		# publish
-		cmds = "['importRef', 'clean', 'removeSet', 'removeFixSet']"
+		cmds = "['importRef', 'removeUnknownPlugin', 'hideRigDetails', 'deleteNonDefaultCamera', 'clean', 'removeSet', 'removeFixSet']"
 		rigPublish.run(src, dst, cmds)
-
+		
 		if backupResult : 
 			backupMTime = backupResult[1]
 			currentMTime = os.path.getmtime(dst)
@@ -190,7 +190,7 @@ def exportDevRig(asset) :
 	if dstExists : 
 		mtime = os.path.getmtime(dst)
 
-	cmds = "['importRef', 'clean', 'removeSet']"
+	cmds = "['importRef', 'removeUnknownPlugin', 'clean', 'removeSet']"
 
 	# override rig set 
 	if asset.project() in setting.devCmdSetOverride.keys() : 

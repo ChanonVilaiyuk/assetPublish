@@ -11,6 +11,8 @@ from tool.utils.batch import rigPublish
 reload(rigPublish)
 from tool.ptAlembic import exportShade
 reload(exportShade)
+from tool.utils import abcUtils
+reload(abcUtils)
 
 import setting
 reload(setting)
@@ -51,6 +53,9 @@ def publish(asset, mainUI=None) :
 
         result = {'Export Edl': {'status': result1[0], 'message': result1[1]}, 
                     'Texture Resolution': {'status': result2[0], 'message': result2[1]}}
+
+    result4 = exportABC(asset)
+    result.update(result4)
 
     return result
 
@@ -173,9 +178,9 @@ def convertTextureCmd(asset):
                 cmd = '"C:/Program Files/Chaos Group/V-Ray/Maya 2016 for x64/bin/img2tiledexr.exe" '
 
             cmd += '%s ' % filePath.replace('\\','/')
-            cmd += '%s.exr -32bit -compression zips -tileSize 64x64 -linear auto' % os.path.join(output,imageName).replace('\\','/')
+            cmd += '%s.exr -32bit -compression none -tileSize 64x64 -linear off' % os.path.join(output,imageName).replace('\\','/')
             subprocess.Popen(cmd,stdout=subprocess.PIPE).communicate()[0]
-            #
+            
 
             rvReport = subprocess.Popen('"O:/systemTool/convertor/Tweak/RV-3.12.20-32/bin/rvls.exe" -l "%s"' % filePath,stdout=subprocess.PIPE).communicate()[0]
             rvReport = rvReport.split('\r\n')
@@ -250,7 +255,7 @@ def checkSize(pix):
 def getFileNodes(assetPath) : 
     from tools import fileUtils,getMayaPathFile
     reload(getMayaPathFile)
-    exceptions = ['Lego_Frozen', 'Lego_FRD360']
+    exceptions = ['Lego_FRD360']
     project = getMayaPathFile.searchProjectName(assetPath)
     exceptLayerTextureNode = 'facialRender_lt'
 
@@ -353,3 +358,14 @@ def checkValidShader2(shader) :
         # if no connection and valid node, True 
         else : 
             return True
+
+def exportABC(asset): 
+    publishFile = asset.publishFile(abc=True)
+    start = mc.currentTime(q=True)
+    end = mc.currentTime(q=True)
+    result = abcUtils.exportABC([setting.exportGrp], publishFile, start, end)
+    status = 'failed'
+    if result: 
+        status = 'success'
+
+    return {'ABC Export': {'status': status, 'message': result}}

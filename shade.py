@@ -37,7 +37,7 @@ def publish(asset, batch) :
 	# export ref render
 	title1 = 'Export Render'
 	dst1 = '%s/%s' % (refPath, refRender)
-	cmds1 = "['importRef', 'clean', 'removeSet', 'removeFixSet', 'removeVrayProxy']"
+	cmds1 = "['importRef', 'removeUnknownPlugin', 'clean', 'removeSet', 'removeFixSet', 'removeVrayProxy']"
 	cmds1Log = [setting.rigCmd[a] for a in eval(cmds1)]
 	result1 = exportCmd(asset, title1, src, dst1, cmds1)
 	print cmds1Log
@@ -45,7 +45,7 @@ def publish(asset, batch) :
 	# export ref cache
 	title2 = 'Export Cache'
 	dst2 = '%s/%s' % (refPath, refCache)
-	cmds2 = "['importRef', 'clean', 'removeSet', 'removeFixSet', 'removeRig', 'removeVrayProxy']"
+	cmds2 = "['importRef', 'removeUnknownPlugin', 'clean', 'removeSet', 'removeFixSet', 'removeRig', 'removeVrayProxy']"
 	cmds2Log = [setting.rigCmd[a] for a in eval(cmds2)]
 	result2 = exportCmd(asset, title2, src, dst2, cmds2)
 	print cmds2Log
@@ -53,7 +53,7 @@ def publish(asset, batch) :
 	# export shade
 	title5 = 'Export Shade'
 	dst5 = '%s/%s' % (refPath, refShade)
-	cmds5 = "['importRef', 'exportShade']"
+	cmds5 = "['importRef', 'removeUnknownPlugin', 'exportShade']"
 	cmds5Log = [setting.rigCmd[a] for a in eval(cmds5)]
 	result5 = exportCmd(asset, title5, src, dst5, cmds5, exportGrp, 'None')
 	print cmds5Log
@@ -64,8 +64,8 @@ def publish(asset, batch) :
 		title4 = 'Export VProxy'
 		dst3 = '%s/%s' % (refPath, refVrayProxy)
 		dst4 = '%s/%s' % (refPath, refVProxy)
-		cmds3 = "['importRef', 'clean', 'removeSet', 'removeFixSet', 'keepVrayProxy', 'removeVrayNode']"
-		cmds4 = "['importRef', 'clean', 'removeSet', 'removeFixSet', 'removeRig', 'vProxy', 'removeVrayNode']"
+		cmds3 = "['importRef', 'removeUnknownPlugin', 'clean', 'removeSet', 'removeFixSet', 'keepVrayProxy', 'removeVrayNode']"
+		cmds4 = "['importRef', 'removeUnknownPlugin', 'clean', 'removeSet', 'removeFixSet', 'removeRig', 'vProxy', 'removeVrayNode']"
 		cmds3Log = [setting.rigCmd[a] for a in eval(cmds3)]
 		cmds4Log = [setting.rigCmd[a] for a in eval(cmds4)]
 		result3 = exportCmd(asset, title3, src, dst3, cmds3)
