@@ -694,47 +694,53 @@
            </layout>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
-             <layout class="QHBoxLayout" name="horizontalLayout_2">
-              <item>
-               <widget class="QCheckBox" name="noBatch_checkBox">
-                <property name="text">
-                 <string>Run Batch mode in current session</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="texture_checkBox">
-                <property name="text">
-                 <string>Convert Texture</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="publishFile_checkBox">
-                <property name="text">
-                 <string>Publish File</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="publishShotgun_checkBox">
-                <property name="text">
-                 <string>Publish Shotgun</string>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
+           <layout class="QGridLayout" name="gridLayout_4">
+            <item row="0" column="3">
+             <widget class="QCheckBox" name="publishShotgun_checkBox">
+              <property name="text">
+               <string>Publish Shotgun</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QCheckBox" name="noBatch_checkBox">
+              <property name="text">
+               <string>Run Batch mode in current session</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QCheckBox" name="texture_checkBox">
+              <property name="text">
+               <string>Convert Texture</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QCheckBox" name="publishFile_checkBox">
+              <property name="text">
+               <string>Publish File</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QCheckBox" name="mergeUv_checkBox">
+              <property name="text">
+               <string>Merge published uv to Anim_Rig</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>

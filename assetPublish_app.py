@@ -4,6 +4,46 @@ import sys, os
 import subprocess
 from datetime import datetime
 
+# logger 
+from tool.utils import customLog
+reload(customLog)
+
+scriptName = 'ptAssetPublish'
+# logger = customLog.customLog()
+# logger.setLevel(customLog.DEBUG)
+# logger.setLogName(scriptName)
+
+from tool.utils import logName
+logFile = logName.name(toolName=scriptName, createDir=True)
+
+import logging
+# create logger with 'spam_application'
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+for each in logger.handlers[::-1] :
+    if type(each).__name__ == 'StreamHandler':
+        logger.removeHandler(each)
+
+    if type(each).__name__== 'FileHandler': 
+        logger.removeHandler(each)
+        each.flush()
+        each.close()
+
+# create file handler which logs even debug messages
+fh = logging.FileHandler(logFile)
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(fh)
+logger.addHandler(ch)
+
 from functools import partial
 
 #Import GUI
@@ -14,6 +54,8 @@ from qtshim import wrapinstance
 from tool.publish.asset import assetPublishUI as ui
 from tool.publish.asset import mayaHook as hook
 from tool.publish.asset import check, shotgunPublish, extra, setting, config
+from tool.check import check_core
+from tool.rig.mergeRigUv import geoMatchBatch
 reload(ui)
 reload(hook)
 reload(check)
@@ -21,6 +63,8 @@ reload(shotgunPublish)
 reload(extra)
 reload(setting)
 reload(config)
+reload(check_core)
+reload(geoMatchBatch)
 
 moduleDir = sys.modules[__name__].__file__
 
@@ -34,14 +78,6 @@ from tool.utils import entityInfo, emailUtils
 reload(entityInfo)
 reload(emailUtils)
 
-# logger 
-from tool.utils import customLog
-reload(customLog)
-
-scriptName = 'ptAssetPublish'
-logger = customLog.customLog()
-logger.setLevel(customLog.DEBUG)
-logger.setLogName(scriptName)
 
 #Import maya commands
 import maya.cmds as mc
@@ -216,8 +252,13 @@ class MyForm(QtGui.QMainWindow):
             # self.ui.incrementFile_lineEdit.setText(self.asset.thisScene())
 
         self.ui.texture_checkBox.setEnabled(False)
+        self.ui.mergeUv_checkBox.setEnabled(False)
         if self.asset.department() == self.asset.uv: 
             self.ui.texture_checkBox.setEnabled(True)
+            self.ui.mergeUv_checkBox.setEnabled(True)
+
+        if self.asset.department() == self.asset.rig: 
+            self.ui.mergeUv_checkBox.setEnabled(True)
 
 
     def getFileToIncrement(self) : 
@@ -658,6 +699,20 @@ class MyForm(QtGui.QMainWindow):
         self.setStatus('--- File Publish ---', True, [40, 40, 40], 0)
 
         if publishFile and workDir : 
+            # uv merge AnimRig check 
+            mergeUv = False
+            needMerge, publishUvFile, AnimRig = check_core.check_merge(self.asset)
+
+            if needMerge: 
+                message = 'Uv published file is newer than rig. Do you want to merge new uv to Anim_Rig?'
+                if self.asset.department() == self.asset.uv: 
+                    message = 'Do you want to merge new uv to Anim Rig? If this publish has the same uv, click No'
+                confirmMerge = QtGui.QMessageBox.question(self, 'Merge uv require', message, QtGui.QMessageBox.Ok, QtGui.QMessageBox.No)
+
+                if confirmMerge == QtGui.QMessageBox.Ok: 
+                    mergeUv = True
+
+            
             saveFile = '%s/%s' % (workDir, os.path.basename(workFile))
             # saveFile = hook.addUser(saveFile, user)
 
@@ -693,6 +748,26 @@ class MyForm(QtGui.QMainWindow):
             copyResult = fileUtils.copy(saveResult, publishFile)
             logger.info('Publish file to %s' % publishFile)
             self.setStatus('Published', copyResult)
+ 
+            # merge uv 
+            if mergeUv: 
+                if self.asset.department() == self.asset.uv: 
+                    publishUvFile = publishFile
+                mergeResult = extra.mergeUvToAnimRig(publishUvFile, AnimRig)
+
+                if mergeResult : 
+                    if self.asset.department() == self.asset.rig: 
+                        rigWithUv = incrementFile.replace('.ma', '_withUv.ma')
+                        rigUvCopyResult = fileUtils.copy(AnimRig, rigWithUv)
+                        if rigUvCopyResult: 
+                            mergeResult.update({'Copy rig work with uv': {'status': True, 'message': ''}} )
+
+                    for each in mergeResult : 
+                        title = each
+                        status = mergeResult[each]['status']
+                        message = mergeResult[each]['message']
+                        self.setStatus('%s' % title, status)
+                        logger.info('%s %s' % (title, message))
 
             if saveResult : 
                 # set status 
