@@ -50,6 +50,8 @@ textureCheckStep = ['uv']
 shotgunStatusOverride = ['surface']
 overrideStatus = 'ip'
 
+batchUvProject = ['Lego_Pipeline']
+
 
 steps = {
 'anim': {'code': 'Animation', 'type': 'Step', 'id': 5, 'entity_type': 'Shot'}, 

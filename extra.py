@@ -88,6 +88,7 @@ def depPublish(step, asset, batch = True, mainUI=None) :
 
 
 def mergeUvToAnimRig(pubFile, animRig): 
-	geoMatchBatch.inputPath(animRig, pubFile)
-	return {'Merge uv-AnimRig': {'status': True, 'message': 'dummy'}} 
+	result = geoMatchBatch.inputPath(animRig, pubFile)
+	
+	return result
 

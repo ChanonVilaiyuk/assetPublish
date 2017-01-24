@@ -2,6 +2,10 @@
 from tool.publish.asset import pipeline
 reload(pipeline)
 
+import logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
+
 
 def pipelineCheck(asset) : 
 	pipeline.cleanNamespace()

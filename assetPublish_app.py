@@ -122,6 +122,8 @@ class MyForm(QtGui.QMainWindow):
         self.w = 1280
         self.h = 1024
 
+        logger.info('############ Tool starting ... ############')
+
         # data
         self.screenShotDst = str()
 
@@ -146,11 +148,15 @@ class MyForm(QtGui.QMainWindow):
 
     def initData(self) : 
         # data 
+        logger.info('Initialized data ...')
         self.asset = entityInfo.info()
+        logger.info('#### %s ####' % self.asset.name())
+
         self.statusMap = self.getProjectSetting('statusMap')
         self.outputMap = self.getProjectSetting('outputMap')
         self.svPublishFile = self.asset.publishFile()
         self.logFile = self.asset.getLogPath()
+        logger.info('Completed')
 
     def initFunctions(self) : 
         # UI
@@ -216,6 +222,8 @@ class MyForm(QtGui.QMainWindow):
 
 
     def setEntityInfo(self) : 
+        logger.info('setting entityInfo ...')
+        logger.info('setting ui labels ...')
         self.ui.assetName_label.setText('%s   -   %s' % (self.asset.name(), self.asset.task()))
         self.ui.project_label.setText(self.asset.project())
         self.ui.type_label.setText(self.asset.type())
@@ -226,15 +234,17 @@ class MyForm(QtGui.QMainWindow):
         if publishFile : 
             self.ui.publish_label.setText(os.path.basename(publishFile))
 
+        logger.debug('publish file : %s' % publishFile)
 
         dependency = self.getDependency()
-        print dependency
+        logger.debug('dependency : %s' % dependency)
 
         if dependency : 
             text = '/'.join(dependency)
             self.ui.dependency_label.setText(str(text))
 
         output = self.getOutputStep()
+        logger.debug('output : %s' % output)
 
         if output : 
             text = '/'.join(output)
@@ -242,6 +252,7 @@ class MyForm(QtGui.QMainWindow):
 
         # set increment file 
         incrementFile = self.getFileToIncrement()
+        logger.debug('incrementFile : %s' % incrementFile)
 
         if incrementFile : 
             self.ui.incrementFile_lineEdit.setText(incrementFile)
@@ -251,6 +262,7 @@ class MyForm(QtGui.QMainWindow):
             self.ui.incrementFile_lineEdit.setEnabled(False)
             # self.ui.incrementFile_lineEdit.setText(self.asset.thisScene())
 
+        logger.debug('setting extra buttons state ...')
         self.ui.texture_checkBox.setEnabled(False)
         self.ui.mergeUv_checkBox.setEnabled(False)
         if self.asset.department() == self.asset.uv: 
@@ -259,6 +271,8 @@ class MyForm(QtGui.QMainWindow):
 
         if self.asset.department() == self.asset.rig: 
             self.ui.mergeUv_checkBox.setEnabled(True)
+
+        logger.info('Complete init entityInfo')
 
 
     def getFileToIncrement(self) : 
@@ -495,6 +509,7 @@ class MyForm(QtGui.QMainWindow):
         return True 
 
     def preCheck(self) : 
+        logger.info('## Running Precheck ... ##')
         allowPublish = True
 
         # clear status 
@@ -507,7 +522,6 @@ class MyForm(QtGui.QMainWindow):
         results = check.pipelineCheck(self.asset)
 
         if results : 
-
             # add info 
             infoResult = self.addInfo()
             results.update(infoResult)
@@ -534,6 +548,7 @@ class MyForm(QtGui.QMainWindow):
                     self.displayCapture(self.ui.snap_label, dst, 0.5)
 
                 # check dependency
+                logger.info('check dependency')
                 dependency = self.getDependency()
                 outputFile = self.getOutputStep()
 
@@ -689,7 +704,7 @@ class MyForm(QtGui.QMainWindow):
 
     ''' cmds ''' 
     def publishFile(self) : 
-        logger.debug('--- publishing ---')
+        logger.info('### Start publishing files ... ###')
 
         # publish file 
         publishFile = self.svPublishFile
@@ -701,16 +716,37 @@ class MyForm(QtGui.QMainWindow):
         if publishFile and workDir : 
             # uv merge AnimRig check 
             mergeUv = False
-            needMerge, publishUvFile, AnimRig = check_core.check_merge(self.asset)
+            needMerge = False 
+            if self.asset.project() in setting.batchUvProject: 
+                if self.asset.department() in [self.asset.rig, self.asset.uv] and self.ui.mergeUv_checkBox.isChecked(): 
+                    logger.info('This is uv or rig department and checked always merge uv')
+                # needMerge, publishUvFile, AnimRig = check_core.check_merge(self.asset)
+                    publishDir, publishUvFiles = self.asset.listPublishFiles(self.asset.uv, '%s_%s' % (self.asset.uv, self.asset.taskLOD()))
+                    print 'publishDir', publishDir
+                    print 'publishUvFiles', publishUvFiles
+                    if publishUvFiles: 
+                        publishUvFile = '%s/%s' % (publishDir, sorted(publishUvFiles)[-1])
+                        refPath = self.asset.getPath('ref')
+                        animRig = '%s/%s' % (refPath, self.asset.getRefNaming('anim'))
 
-            if needMerge: 
-                message = 'Uv published file is newer than rig. Do you want to merge new uv to Anim_Rig?'
-                if self.asset.department() == self.asset.uv: 
-                    message = 'Do you want to merge new uv to Anim Rig? If this publish has the same uv, click No'
-                confirmMerge = QtGui.QMessageBox.question(self, 'Merge uv require', message, QtGui.QMessageBox.Ok, QtGui.QMessageBox.No)
 
-                if confirmMerge == QtGui.QMessageBox.Ok: 
-                    mergeUv = True
+                # if true, always merge 
+                # if self.ui.mergeUv_checkBox.isChecked(): 
+                #     logger.info('This is uv or rig department and checked always merge uv')
+                #     mergeUv = True
+
+                # auto 
+                        message = 'Do you want to merge new uv to Anim Rig? If this publish has the same uv, click No'
+                        # message = 'Uv published file is newer than rig. Do you want to merge new uv to Anim_Rig?'
+                        # if self.asset.department() == self.asset.uv: 
+                        #     message = 'Do you want to merge new uv to Anim Rig? If this publish has the same uv, click No'
+                        confirmMerge = QtGui.QMessageBox.question(self, 'Merge uv require', message, QtGui.QMessageBox.Ok, QtGui.QMessageBox.No)
+
+                        if confirmMerge == QtGui.QMessageBox.Ok: 
+                            mergeUv = True
+
+            else: 
+                logger.debug('%s not in batchUv list project' % self.asset.project())
 
             
             saveFile = '%s/%s' % (workDir, os.path.basename(workFile))
@@ -753,12 +789,16 @@ class MyForm(QtGui.QMainWindow):
             if mergeUv: 
                 if self.asset.department() == self.asset.uv: 
                     publishUvFile = publishFile
-                mergeResult = extra.mergeUvToAnimRig(publishUvFile, AnimRig)
+
+                logger.info('Start merging uv ...')
+                logger.debug('param publishedUv %s' % publishUvFile)
+                logger.debug('param AnimRig %s' % animRig)
+                mergeResult = extra.mergeUvToAnimRig(publishUvFile, animRig)
 
                 if mergeResult : 
                     if self.asset.department() == self.asset.rig: 
                         rigWithUv = incrementFile.replace('.ma', '_withUv.ma')
-                        rigUvCopyResult = fileUtils.copy(AnimRig, rigWithUv)
+                        rigUvCopyResult = fileUtils.copy(animRig, rigWithUv)
                         if rigUvCopyResult: 
                             mergeResult.update({'Copy rig work with uv': {'status': True, 'message': ''}} )
 
@@ -802,6 +842,7 @@ class MyForm(QtGui.QMainWindow):
 
 
     def listPublishFiles(self) : 
+        logger.info('listing publish files ...')
         publishDir = self.asset.publishDir()
         files = fileUtils.listFile(publishDir, 'ma')
         listWidget = 'publish_listWidget'
@@ -813,8 +854,11 @@ class MyForm(QtGui.QMainWindow):
         for eachFile in files : 
             self.addListWidgetItem(listWidget, eachFile, iconPath, color, 1)
 
+        logger.info('completed')
+
 
     def listRefFiles(self) : 
+        logger.info('listing ref files ...')
         refPath = self.asset.getPath('ref')
         files = fileUtils.listFile(refPath)
         listWidget = 'ref_listWidget'
@@ -826,6 +870,7 @@ class MyForm(QtGui.QMainWindow):
         for eachFile in files : 
             self.addListWidgetItem(listWidget, eachFile, iconPath, color, 1)
 
+        logger.info('completed')
 
 
     def addInfo(self) : 
