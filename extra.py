@@ -22,6 +22,26 @@ def publish(asset, batch = True, mainUI=None) :
 
 	return result
 
+def postPublish(asset, batch = True, mainUI=None) : 
+	step = asset.department()
+	if step == 'model' : 
+		# GPU
+		# find Geo_Grp
+		return 
+
+	if step == 'uv' : 
+		from tool.publish.asset import rig
+		reload(rig)
+		return rig.exportDevRig(asset) 
+
+	if step == 'rig' : 
+		from tool.publish.asset import rig
+		reload(rig)
+		return rig.exportDevRig(asset)
+
+	if step == 'surface' : 
+		return 
+
 
 def depPublish(step, asset, batch = True, mainUI=None) : 
 	if step == 'model' : 
@@ -89,6 +109,6 @@ def depPublish(step, asset, batch = True, mainUI=None) :
 
 def mergeUvToAnimRig(pubFile, animRig): 
 	result = geoMatchBatch.inputPath(animRig, pubFile)
-	
+	logger.info('mergeUvToAnimRig result is {0} ...'.format(result))
 	return result
 

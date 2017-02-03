@@ -50,7 +50,7 @@ textureCheckStep = ['uv']
 shotgunStatusOverride = ['surface']
 overrideStatus = 'ip'
 
-batchUvProject = ['Lego_Pipeline']
+batchUvProject =['Lego_Pipeline', 'Lego_FRDCG']
 
 
 steps = {

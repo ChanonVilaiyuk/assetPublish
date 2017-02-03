@@ -55,7 +55,7 @@ from tool.publish.asset import assetPublishUI as ui
 from tool.publish.asset import mayaHook as hook
 from tool.publish.asset import check, shotgunPublish, extra, setting, config
 from tool.check import check_core
-from tool.rig.mergeRigUv import geoMatchBatch
+#from tool.rig.mergeRigUv import geoMatchBatch
 reload(ui)
 reload(hook)
 reload(check)
@@ -64,7 +64,7 @@ reload(extra)
 reload(setting)
 reload(config)
 reload(check_core)
-reload(geoMatchBatch)
+#reload(geoMatchBatch)
 
 moduleDir = sys.modules[__name__].__file__
 
@@ -722,6 +722,8 @@ class MyForm(QtGui.QMainWindow):
                     logger.info('This is uv or rig department and checked always merge uv')
                 # needMerge, publishUvFile, AnimRig = check_core.check_merge(self.asset)
                     publishDir, publishUvFiles = self.asset.listPublishFiles(self.asset.uv, '%s_%s' % (self.asset.uv, self.asset.taskLOD()))
+                    if self.asset.department() == self.asset.uv: 
+                        publishUvFiles = publishFile
                     print 'publishDir', publishDir
                     print 'publishUvFiles', publishUvFiles
                     if publishUvFiles: 
@@ -785,6 +787,7 @@ class MyForm(QtGui.QMainWindow):
             logger.info('Publish file to %s' % publishFile)
             self.setStatus('Published', copyResult)
  
+            postResult = dict()
             # merge uv 
             if mergeUv: 
                 if self.asset.department() == self.asset.uv: 
@@ -794,20 +797,26 @@ class MyForm(QtGui.QMainWindow):
                 logger.debug('param publishedUv %s' % publishUvFile)
                 logger.debug('param AnimRig %s' % animRig)
                 mergeResult = extra.mergeUvToAnimRig(publishUvFile, animRig)
-
+                logger.info('mergeResult is {0} ...'.format(mergeResult))
                 if mergeResult : 
+                    logger.info('asset department is {0}'.format(self.asset.department()))
                     if self.asset.department() == self.asset.rig: 
                         rigWithUv = incrementFile.replace('.ma', '_withUv.ma')
                         rigUvCopyResult = fileUtils.copy(animRig, rigWithUv)
                         if rigUvCopyResult: 
                             mergeResult.update({'Copy rig work with uv': {'status': True, 'message': ''}} )
+                            postResult.update(mergeResult)
 
-                    for each in mergeResult : 
-                        title = each
-                        status = mergeResult[each]['status']
-                        message = mergeResult[each]['message']
-                        self.setStatus('%s' % title, status)
-                        logger.info('%s %s' % (title, message))
+            extraPostResult = extra.postPublish(self.asset)
+            if extraPostResult: 
+                postResult.update(extraPostResult)
+
+            for each in postResult : 
+                title = each
+                status = postResult[each]['status']
+                message = postResult[each]['message']
+                self.setStatus('%s' % title, status)
+                logger.info('%s %s' % (title, message))
 
             if saveResult : 
                 # set status 

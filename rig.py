@@ -17,15 +17,15 @@ def publish(asset, batch) :
 	result = dict()
 	result1 = exportRig(asset, batch)
 	# result2 = exportHData(asset)
-	result3 = exportABC(asset)
-	result4 = exportDevRig(asset)
+	# result3 = exportABC(asset)
+	# result4 = exportDevRig(asset)
 
 	result.update(result1)
 	# result.update(result2)
-	if result3 : 
-		result.update(result3)
+	# if result3 : 
+	# 	result.update(result3)
 		
-	result.update(result4)
+	# result.update(result4)
 
 	return result
 
@@ -111,7 +111,7 @@ def exportHData(asset) :
 
 	return {'Export H-Data': {'status': status, 'message': '', 'hero': result}}
 
-def exportABC(asset) : 
+def exportABCTT(asset) : 
 	mc.loadPlugin("C:/Program Files/Autodesk/Maya2015/bin/plug-ins/AbcImport.mll", qt = True)
 	from tool.ptAlembic import abcUtils
 	reload(abcUtils)
@@ -176,8 +176,10 @@ def exportDevRig(asset) :
 	refPath = asset.getPath('ref')
 	refFile = asset.getRefNaming('anim')
 	ref = '%s/%s' % (refPath, refFile)
+	print 'ref', ref 
 
-	src = asset.thisScene()
+	# src = asset.thisScene()
+	src = ref
 	dst = devRigPath
 
 	if not os.path.exists(devPath) : 
@@ -226,4 +228,14 @@ def removeKey(ctrl, start, end) :
 	mc.playbackOptions(min = start)
 	mc.playbackOptions(max = end)
 	
+def exportABC(asset): 
+	from tool.utils import abcUtils
+	publishFile = asset.publishFile(abc=True)
+	start = mc.currentTime(q=True)
+	end = mc.currentTime(q=True)
+	result = abcUtils.exportABC([setting.exportGrp], publishFile, start, end)
+	status = 'failed'
+	if result: 
+		status = 'success'
 
+	return {'ABC Export': {'status': status, 'message': result}}
